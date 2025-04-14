@@ -133,6 +133,40 @@ make client-setup
 make client-dev -j 3
 ```
 
+
+### セットアップ・起動 手順（開発用にWindowsでDockerを使わずに実行する場合）
+* リポジトリをクローン
+* `copy .env.example .env` をコンソールで実行
+  * コピー後に各環境変数を設定。各環境変数の意味は.env.exampleに記載。
+* Node.jsの確認 `node -v` `npm -v`
+  * 存在しない場合は https://nodejs.org/ja から LTS バージョンをインストール
+* Pythonの確認 `python --version`
+  * 存在しない場合は https://www.python.org/downloads/windows/ から 3.12以上のバージョンをインストール
+* client フォルダで依存ライブラリをインストール
+``` cmd
+cd client
+npm install
+cd ..
+```
+* client-admin フォルダで依存ライブラリをインストール
+``` cmd
+cd client-admin
+npm install
+cd ..
+``` 
+* server フォルダで Python 仮想環境を作成し、依存ライブラリをインストール
+``` cmd
+cd server
+python -m venv venv
+call venv\Scripts\activate
+pip install --upgrade pip
+pip install .
+cd ..
+```
+* dev_win_direct.bat を実行
+  * ブラウザで http://localhost:3000 にアクセスすることでレポート一覧画面にアクセス可能
+  * ブラウザで http://localhost:4000 にアクセスすることで管理画面にアクセス可能
+
 ## 免責事項
 大規模言語モデル（LLM）にはバイアスがあり、信頼性の低い結果を生成することが知られています。私たちはこれらの問題を軽減する方法に積極的に取り組んでいますが、現段階ではいかなる保証も提供することはできません。特に重要な決定を下す際は、本アプリの出力結果のみに依存せず、必ず内容を検証してください。
 
