@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>{{ result.config.question }}</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1,
+        h3 {
+            color: #2a4365;
+        }
+
+        .stat-box {
+            display: inline-block;
+            width: 200px;
+            text-align: center;
+            margin: 0 10px;
+        }
+
+        .label {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .fullscreen-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 999;
+        }
+
+        /* 意見グループ一覧用 */
+        #groupContainer {
+            margin-top: 30px;
+        }
+
+        .group {
+            border: 1px solid #ccc;
+            margin: 5px 0;
+            padding: 5px 10px;
+        }
+
+        .group-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f7f7f7;
+            padding: 5px;
+        }
+
+        .group-header .toggle {
+            font-weight: bold;
+            margin-right: 10px;
+            user-select: none;
+        }
+
+        .group-header .title {
+            flex: 1;
+        }
+
+        .group-header .stats {
+            font-size: 0.9em;
+            color: #555;
+            margin-left: 10px;
+        }
+
+        .group-header .summary {
+            font-size: 0.9em;
+            color: #333;
+            margin-left: 20px;
+        }
+
+        .group-children,
+        .arguments {
+            margin-left: 20px;
+            border-left: 1px dashed #ccc;
+            padding-left: 10px;
+        }
+
+        .argument {
+            margin: 5px 0;
+            padding: 3px;
+            background-color: #eef;
+        }
+
+        /* すべて展開/すべて閉じるボタン */
+        #toggleAll {
+            margin-bottom: 15px;
+            background-color: #3182ce;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        #toggleAll:hover {
+            background-color: #2a69ac;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>{{ result.config.question }}</h1>
+    <p><strong>{{ result.arguments | length }}件</strong></p>
+    <p>{{ result.overview }}</p>
+
+    <div>
+        <div class="stat-box">
+            <div class="label">{{ result.comment_num }}</div>
+            <div>コメント数</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">{{ result.arguments | length }}</div>
+            <div>抽出された意見数</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">
+                {{ result.clusters | selectattr("level", "equalto", 1) | list | length }}
+                →
+                {{ result.clusters | selectattr("level", "equalto", 2) | list | length }}
+            </div>
+            <div>集約された意見グループ</div>
+        </div>
+    </div>
+
+    <!-- 散布図 -->
+    <div class="chart-container" id="scatterChart"></div>
+
+    <!-- 階層的な意見グループ一覧 -->
+    <h2>意見グループ一覧</h2>
+    <button id="toggleAll" onclick="toggleAllGroups()">すべて展開</button>
+    <div id="groupContainer">
+        {% macro render_group(group, parent_color='') %}
+        {%- if group.level == 1 -%}
+        {%- set my_color = color_map[group.id] -%}
+        {%- else -%}
+        {%- set my_color = parent_color -%}
+        {%- endif -%}
+        <div class="group" data-group-id="{{ group.id }}">
+            <div class="group-header" onclick="toggleThisGroup(this)" style="color: {{ my_color }};">
+                <span class="toggle">[+]</span>
+                <span class="title">{{ group.label }}</span>
+                {% set total = result.arguments | length %}
+                {% set percentage = (group.value / total * 100) if total > 0 else 0 %}
+                <span class="stats">{{ group.value }}件 ({{ "%.1f"|format(percentage) }}%)</span>
+            </div>
+            <div class="summary">{{ group.takeaway }}</div>
+            {% if group.level == 1 %}
+            <div class="group-children" style="display: none;">
+                {% for child in group.children %}
+                {{ render_group(child, my_color) }}
+                {% endfor %}
+            </div>
+            {% else %}
+            {%- if group.children and group.children|length > 0 -%}
+            <div class="group-children" style="display: none;">
+                {% for child in group.children %}
+                {{ render_group(child, my_color) }}
+                {% endfor %}
+            </div>
+            {%- else -%}
+            {% set group_args = result.arguments | selectattr("cluster_ids", "search", group.id) | list %}
+            {% if group_args | length > 0 %}
+            <div class="arguments" style="display: none;">
+                {% for arg in group_args %}
+                <div class="argument">
+                    <p>{{ arg.argument }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {%- endif -%}
+            {% endif %}
+        </div>
+        {% endmacro %}
+
+        {% for group in cluster_tree %}
+        {{ render_group(group) }}
+        {% endfor %}
+    </div>
+
+    <!-- JSスクリプト部 -->
+    <script>
+        // 個別のグループの展開／折りたたみ切替
+        function toggleThisGroup(headerElem) {
+            const groupElem = headerElem.parentElement;
+            const toggleElem = headerElem.querySelector(".toggle");
+            const childContainer = groupElem.querySelector(".group-children") || groupElem.querySelector(".arguments");
+            if (childContainer) {
+                if (childContainer.style.display === "none") {
+                    childContainer.style.display = "block";
+                    toggleElem.textContent = "[-]";
+                } else {
+                    childContainer.style.display = "none";
+                    toggleElem.textContent = "[+]";
+                }
+            }
+        }
+
+        // すべて展開／すべて閉じるボタンの処理
+        function toggleAllGroups() {
+            const btn = document.getElementById("toggleAll");
+            const groups = document.querySelectorAll("#groupContainer .group");
+            const expand = btn.textContent === "すべて展開";
+            groups.forEach(group => {
+                const header = group.querySelector(".group-header");
+                const toggleElem = header.querySelector(".toggle");
+                const childContainer = group.querySelector(".group-children") || group.querySelector(".arguments");
+                if (childContainer) {
+                    childContainer.style.display = expand ? "block" : "none";
+                    toggleElem.textContent = expand ? "[-]" : "[+]";
+                }
+            });
+            btn.textContent = expand ? "すべて閉じる" : "すべて展開";
+        }
+
+        // テンプレート側で渡された result と color_map を利用
+        const result = {{ result | tojson }};
+        const color_map = {{ color_map | tojson }};
+
+        const clusters = result.clusters.filter(c => c.level === 2);
+        const args = result.arguments;
+
+        // 各 level2 クラスタについて、色は親(level1)のcolor_map を使う
+        const scatterData = clusters.map((cluster, idx) => {
+            const clusterArgs = args.filter(arg => arg.cluster_ids.includes(cluster.id));
+            const x = clusterArgs.map(arg => arg.x);
+            const y = clusterArgs.map(arg => arg.y);
+
+            let color = "";
+            if (cluster.parent && color_map[cluster.parent]) {
+                color = color_map[cluster.parent];
+            } else {
+                color = `hsl(${(idx * 40) % 360},70%,60%)`;
+            }
+
+            return {
+                x: x,
+                y: y,
+                mode: "markers",
+                type: "scatter",
+                name: cluster.label,
+                marker: { color: color, size: 7 },
+                text: clusterArgs.map(arg =>
+                    `<b>${cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br>")}`
+                ),
+                hoverinfo: "text"
+            };
+        });
+
+        // 各第一階層のクラスタごとに、対応する arguments の平均座標を算出して、scatter の annotation として表示する
+        const level1Clusters = result.clusters.filter(c => c.level === 1);
+        const annotations = level1Clusters.map(cluster => {
+            const clusterArgs = result.arguments.filter(arg => arg.cluster_ids.includes(cluster.id));
+            if (clusterArgs.length > 0) {
+                const sumX = clusterArgs.reduce((sum, arg) => sum + arg.x, 0);
+                const sumY = clusterArgs.reduce((sum, arg) => sum + arg.y, 0);
+                const centerX = sumX / clusterArgs.length;
+                const centerY = sumY / clusterArgs.length;
+                return {
+                    x: centerX,
+                    y: centerY,
+                    xref: "x",
+                    yref: "y",
+                    text: cluster.label,
+                    showarrow: false,
+                    font: { color: "#fff", size: 14 },
+                    bgcolor: color_map[cluster.id] || "#000",
+                    opacity: 0.8
+                };
+            }
+            return null;
+        }).filter(ann => ann !== null);
+
+        // Plotly散布図の作成
+        Plotly.newPlot("scatterChart", scatterData, {
+            margin: { l: 20, r: 20, t: 20, b: 20 },
+            xaxis: { showticklabels: false, zeroline: false },
+            yaxis: { showticklabels: false, zeroline: false },
+            hovermode: "closest",
+            showlegend: false,
+            annotations: annotations
+        }, { responsive: true });
+    </script>
+</body>
+
+</html>
