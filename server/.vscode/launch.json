@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Evaluate Silhouette Score",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/broadlistening/evaluate_silhouette_score.py",
+      "args": [
+        "--dataset", "cf336fa5-6f48-4ab6-8a78-40bf911e4f4d",
+        "--level", "1",
+        "--source", "both"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
