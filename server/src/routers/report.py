@@ -45,7 +45,7 @@ async def report(slug: str, api_key: str = Depends(verify_public_api_key)) -> di
     if not report_path.exists():
         raise HTTPException(status_code=404, detail="Report not found")
 
-    with open(report_path) as f:
+    with open(report_path, encoding="utf-8") as f:
         report_result = json.load(f)
 
     return report_result
