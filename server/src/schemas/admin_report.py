@@ -34,7 +34,7 @@ class ReportInput(SchemaBaseModel):
     is_embedded_at_local: bool = False  # エンベデッド処理をローカルで行うかどうか
     provider: str = "openai"  # LLMプロバイダー（openai, azure, openrouter, local）
     local_llm_address: str | None = None  # LocalLLM用アドレス（例: "127.0.0.1:1234"）
-
+    local_embedding_model: str | None = None  # エンベデッド処理をローカルモデル名
 
 class ReportMetadataUpdate(SchemaBaseModel):
     """レポートのメタデータ更新用スキーマ"""

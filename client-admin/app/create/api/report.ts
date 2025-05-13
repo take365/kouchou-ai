@@ -19,6 +19,7 @@ export async function createReport({
   inputType,
   is_embedded_at_local,
   local_llm_address,
+  local_embedding_model,
 }: {
   input: string;
   question: string;
@@ -33,6 +34,7 @@ export async function createReport({
   inputType: string;
   is_embedded_at_local: boolean;
   local_llm_address?: string;
+  local_embedding_model?: string; 
 }): Promise<void> {
   try {
     const response = await fetch(
@@ -57,6 +59,7 @@ export async function createReport({
           inputType,
           is_embedded_at_local,
           local_llm_address,
+          local_embedding_model,
         }),
       }
     );

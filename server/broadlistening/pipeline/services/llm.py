@@ -6,7 +6,8 @@ import openai
 from dotenv import load_dotenv
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_exponential)
 
 DOTENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.env"))
 load_dotenv(DOTENV_PATH)
@@ -312,10 +313,9 @@ def request_to_local_llm_embed(args, model, address="localhost:11434"):
         return request_to_local_embed(args)
 
 
-def request_to_embed(args, model, is_embedded_at_local=False, provider="openai", local_llm_address: str | None = None):
+def request_to_embed(args, model, is_embedded_at_local=False, provider="openai", local_llm_address: str | None = None, model_name=None):
     if is_embedded_at_local:
-        return request_to_local_embed(args)
-
+        return request_to_local_embed(args, model_name or model)
     if provider == "azure":
         return request_to_azure_embed(args, model)
     elif provider == "openai":
@@ -349,24 +349,39 @@ def request_to_azure_embed(args, model):
     return [item.embedding for item in response.data]
 
 
-__local_emb_model = None
+__local_emb_models = {} 
 __local_emb_model_loading_lock = threading.Lock()
 
 
-def request_to_local_embed(args):
-    global __local_emb_model
+def request_to_local_embed(args, model_name="paraphrase-multilingual-mpnet-base-v2"):
+    global __local_emb_models
     # memo: モデルを遅延ロード＆キャッシュするために、グローバル変数を使用
+    print(f"model_name={model_name}")
 
     with __local_emb_model_loading_lock:
         # memo: スレッドセーフにするためにロックを使用
-        if __local_emb_model is None:
+        if model_name not in __local_emb_models:
+            import torch
             from sentence_transformers import SentenceTransformer
 
-            model_name = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-            __local_emb_model = SentenceTransformer(model_name)
+            print(f"📦 モデル読み込み中: {model_name}")
+            model = SentenceTransformer(model_name, trust_remote_code=True)
 
-    result = __local_emb_model.encode(args)
-    return result.tolist()
+            if torch.cuda.is_available():
+                print("🚀 GPUモードで実行します")
+                model = model.to("cuda")
+            else:
+                print("⚙️ CPUモードで実行します")
+
+            __local_emb_models[model_name] = model
+
+    model = __local_emb_models[model_name]
+
+    # ✅ RoSEtta用のqueryプレフィックス処理
+    if model_name == "pkshatech/RoSEtta-base-ja":
+        args = [f"query: {text}" for text in args]
+
+    return model.encode(args, convert_to_numpy=True).tolist()
 
 
 def _test():

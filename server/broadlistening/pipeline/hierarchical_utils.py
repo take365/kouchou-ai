@@ -22,6 +22,7 @@ def validate_config(config):
         "is_embedded_at_local",
         "provider",
         "local_llm_address",
+        "local_embedding_model", 
     ]
     step_names = [x["step"] for x in specs]
     for key in config:

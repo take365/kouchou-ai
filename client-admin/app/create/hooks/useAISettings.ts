@@ -311,6 +311,28 @@ export function useAISettings() {
     return provider === "local";
   };
 
+    /**
+   * ローカルエンベディングモデル
+   */
+  const LOCAL_EMBEDDING_MODELS = [
+  { key: "mpnet", model_id: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2" },
+  { key: "distiluse", model_id: "sentence-transformers/distiluse-base-multilingual-cased-v2" },
+  { key: "minilm", model_id: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" },
+  { key: "xlmr", model_id: "sentence-transformers/paraphrase-xlm-r-multilingual-v1" },
+  { key: "labse", model_id: "sentence-transformers/LaBSE" },
+  { key: "retrieva", model_id: "sonoisa/sentence-bert-base-ja-mean-tokens" },
+  { key: "ruri", model_id: "cl-nagoya/ruri-v3-310m" },
+  { key: "plamo", model_id: "pfnet/plamo-embedding-1b" },
+  { key: "rosetta", model_id: "pkshatech/RoSEtta-base-ja" },
+  { key: "sarashina", model_id: "sbintuitions/sarashina-embedding-v1-1b" },
+];
+  const [localEmbeddingModel, setLocalEmbeddingModel] = useState<string>("");
+  const getLocalEmbeddingModelOptions = () => {
+  return LOCAL_EMBEDDING_MODELS.map((m) => ({
+    value: m.model_id,
+    label: m.model_id, // ラベル整形が必要ならここで行う
+  }));
+};
   /**
    * AI設定をリセット
    */
@@ -353,5 +375,8 @@ export function useAISettings() {
     resetAISettings,
     setIsEmbeddedAtLocal,
     fetchLocalLLMModels,
+    localEmbeddingModel,
+    setLocalEmbeddingModel,
+    getLocalEmbeddingModelOptions,
   };
 }
