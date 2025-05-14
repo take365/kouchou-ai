@@ -35,7 +35,9 @@ class ReportInput(SchemaBaseModel):
     provider: str = "openai"  # LLMプロバイダー（openai, azure, openrouter, local）
     local_llm_address: str | None = None  # LocalLLM用アドレス（例: "127.0.0.1:1234"）
     local_embedding_model: str | None = None  # エンベデッド処理をローカルモデル名
-
+    skip_extraction: bool = False  # 抽出処理をスキップする
+    auto_cluster: bool = False  # 意見グループ数を自動で決定
+    
 class ReportMetadataUpdate(SchemaBaseModel):
     """レポートのメタデータ更新用スキーマ"""
 

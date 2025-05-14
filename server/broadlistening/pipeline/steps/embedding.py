@@ -13,6 +13,7 @@ def embedding(config):
     arguments = pd.read_csv(f"outputs/{dataset}/args.csv", usecols=["arg-id", "argument"])
     embeddings = []
     batch_size = 1000
+    print(f"model={model}")
     for i in tqdm(range(0, len(arguments), batch_size)):
         args = arguments["argument"].tolist()[i : i + batch_size]
         embeds = request_to_embed(args, model, is_embedded_at_local, model_name=local_model)

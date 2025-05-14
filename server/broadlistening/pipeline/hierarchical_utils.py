@@ -119,7 +119,10 @@ def initialization(sysargv):
             config["skip-interaction"] = True
         if option == "--without-html":
             config["without-html"] = True
-
+        if option == "--skip-extraction":                            
+            config["skip_extraction"] = True
+        if option == "--auto-cluster":                               
+            config["auto_cluster"] = True
     output_dir = config["output_dir"]
 
     # check if job has run before

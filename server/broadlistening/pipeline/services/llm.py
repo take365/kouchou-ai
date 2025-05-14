@@ -314,6 +314,11 @@ def request_to_local_llm_embed(args, model, address="localhost:11434"):
 
 
 def request_to_embed(args, model, is_embedded_at_local=False, provider="openai", local_llm_address: str | None = None, model_name=None):
+    print(f"provider={provider}")
+    print(f"is_embedded_at_local={is_embedded_at_local}")
+    print(f"model_name={model_name}")
+    print(f"model={model}")
+    
     if is_embedded_at_local:
         return request_to_local_embed(args, model_name or model)
     if provider == "azure":
@@ -355,11 +360,9 @@ __local_emb_model_loading_lock = threading.Lock()
 
 def request_to_local_embed(args, model_name="paraphrase-multilingual-mpnet-base-v2"):
     global __local_emb_models
-    # memo: モデルを遅延ロード＆キャッシュするために、グローバル変数を使用
     print(f"model_name={model_name}")
 
     with __local_emb_model_loading_lock:
-        # memo: スレッドセーフにするためにロックを使用
         if model_name not in __local_emb_models:
             import torch
             from sentence_transformers import SentenceTransformer
@@ -368,10 +371,16 @@ def request_to_local_embed(args, model_name="paraphrase-multilingual-mpnet-base-
             model = SentenceTransformer(model_name, trust_remote_code=True)
 
             if torch.cuda.is_available():
-                print("🚀 GPUモードで実行します")
-                model = model.to("cuda")
+                try:
+                    torch.cuda.empty_cache()  # ✅ キャッシュクリア
+                    print("🚀 GPUモードで実行します")
+                    model = model.to("cuda")
+                except torch.cuda.OutOfMemoryError:
+                    print("⚠️ GPUメモリ不足: CPUモードにフォールバックします")
+                    model = model.to("cpu")
             else:
                 print("⚙️ CPUモードで実行します")
+                model = model.to("cpu")
 
             __local_emb_models[model_name] = model
 

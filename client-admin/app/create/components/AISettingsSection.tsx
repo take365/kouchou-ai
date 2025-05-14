@@ -37,6 +37,8 @@ export function AISettingsSection({
   localEmbeddingModel,           
   setLocalEmbeddingModel,    
   getLocalEmbeddingModelOptions,   
+  skipExtraction,
+  setSkipExtraction
 }: {
   provider: string;
   model: string;
@@ -71,6 +73,8 @@ export function AISettingsSection({
   setLocalEmbeddingModel: (value: string) => void;
   onEmbeddedAtLocalChange: (checked: boolean | "indeterminate") => void;
   getLocalEmbeddingModelOptions: () => { value: string; label: string }[];
+  skipExtraction: boolean;
+  setSkipExtraction: (value: boolean) => void;
 }){
 
   const modelOptions = getCurrentModels();
@@ -228,7 +232,21 @@ export function AISettingsSection({
           )}
         </Field.HelperText>
       </Field.Root>
-
+      {/* ✅ 追加チェックボックス：抽出処理スキップ */}
+      <Field.Root>
+        <Checkbox
+          checked={skipExtraction}
+          onCheckedChange={(details) => {
+            const { checked } = details;
+            if (checked !== "indeterminate") setSkipExtraction(checked);
+          }}
+        >
+          抽出処理をスキップする
+        </Checkbox>
+        <Field.HelperText>
+          抽出済のデータや整えられたデータを使用する場合にチェックしてください。
+        </Field.HelperText>
+      </Field.Root>
       <Field.Root>
         <Field.Label>抽出プロンプト</Field.Label>
         <Textarea
@@ -264,7 +282,6 @@ export function AISettingsSection({
           AIに提示する統合ラベリングプロンプトです(通常は変更不要です)
         </Field.HelperText>
       </Field.Root>
-
       <Field.Root>
         <Field.Label>要約プロンプト</Field.Label>
         <Textarea

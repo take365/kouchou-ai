@@ -23,6 +23,7 @@ export function useClusterSettings(initialLv1 = 5, initialLv2 = 50) {
     return recommended;
   }, [calculateRecommendedClusters]);
 
+  const [autoClusterEnabled, setAutoClusterEnabled] = useState(false);
   const handleLv1Change = useCallback((newValue: number) => {
     const limitedValue = Math.max(2, Math.min(40, newValue));
     setClusterLv1(limitedValue);
@@ -87,6 +88,8 @@ export function useClusterSettings(initialLv1 = 5, initialLv2 = 50) {
     setRecommended,
     handleLv1Change,
     handleLv2Change,
-    resetClusterSettings
+    resetClusterSettings,
+    autoClusterEnabled,
+    setAutoClusterEnabled
   };
 }

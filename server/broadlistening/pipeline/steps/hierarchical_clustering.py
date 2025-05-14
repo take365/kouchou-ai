@@ -1,12 +1,42 @@
 """Cluster the arguments using UMAP + HDBSCAN and GPT-4."""
 
+import math
 from importlib import import_module
 
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
+
+def get_cluster_ranges(n_comments):
+    lv1 = max(2, min(10, round(n_comments ** (1 / 3))))
+    lv2 = max(2, min(1000, round(lv1 * lv1)))
+    upper_range = range(2, max(2, lv2 - 1))
+    lower_range = range(max(2, lv2 - 1), lv2 * 2 + 1)
+    return upper_range, lower_range
+
+def best_k_by_silhouette(embeds, k_range, level_name=""):
+    print(f"🔍 {level_name}クラスタ数の候補: {list(k_range)}")
+    best_score = -1
+    best_k = k_range.start
+    for k in k_range:
+        if k >= len(embeds):
+            print(f"⚠️ k={k} はサンプル数 {len(embeds)} 以上のためスキップ")
+            continue
+        try:
+            labels = KMeans(n_clusters=k, random_state=42).fit_predict(embeds)
+            score = silhouette_score(embeds, labels)
+            #print(f"🔸 k={k}, silhouette={score:.4f}")
+            if score > best_score:
+                best_score = score
+                best_k = k
+        except Exception as e:
+            print(f"⚠️ k={k} でエラー: {e}")
+            continue
+    print(f"✅ {level_name}の最適クラスタ数: {best_k}（スコア: {best_score:.4f}）")
+    return best_k
 
 def hierarchical_clustering(config):
     UMAP = import_module("umap").UMAP
@@ -16,9 +46,9 @@ def hierarchical_clustering(config):
     arguments_df = pd.read_csv(f"outputs/{dataset}/args.csv", usecols=["arg-id", "argument"])
     embeddings_df = pd.read_pickle(f"outputs/{dataset}/embeddings.pkl")
     embeddings_array = np.asarray(embeddings_df["embedding"].values.tolist())
-    cluster_nums = config["hierarchical_clustering"]["cluster_nums"]
 
     n_samples = embeddings_array.shape[0]
+
     # デフォルト設定は15
     default_n_neighbors = 15
 
@@ -33,6 +63,17 @@ def hierarchical_clustering(config):
     # 以下のエラーの場合、おそらく元の意見件数が少なすぎることが原因
     # TypeError: Cannot use scipy.linalg.eigh for sparse A with k >= N. Use scipy.linalg.eigh(A.toarray()) or reduce k.
     umap_embeds = umap_model.fit_transform(embeddings_array)
+
+    auto_cluster = config.get("auto_cluster", False)
+    if auto_cluster or "cluster_nums" not in config["hierarchical_clustering"]:
+        print("🧠 クラスタ数を自動決定します（UMAP後の Silhouette スコアで最良値を選択）")
+        upper_range, lower_range = get_cluster_ranges(n_samples)
+        best_lv1 = best_k_by_silhouette(umap_embeds, upper_range, level_name="上層（Lv1）")
+        best_lv2 = best_k_by_silhouette(umap_embeds, lower_range, level_name="下層（Lv2）")
+        config["hierarchical_clustering"]["cluster_nums"] = [best_lv1, best_lv2]
+        print(f"✅ 決定されたクラスタ数: lv1 = {best_lv1}, lv2 = {best_lv2}")
+
+    cluster_nums = config["hierarchical_clustering"]["cluster_nums"]
 
     cluster_results = hierarchical_clustering_embeddings(
         umap_embeds=umap_embeds,

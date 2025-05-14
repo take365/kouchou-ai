@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import threading
 from pathlib import Path
@@ -123,7 +124,14 @@ def launch_report_generation(report_input: ReportInput) -> None:
         add_new_report_to_status(report_input)
         config_path = save_config_file(report_input)
         save_input_file(report_input)
-        cmd = ["python", "hierarchical_main.py", config_path, "--skip-interaction", "--without-html"]
+        python_cmd = os.environ.get("PYTHON_EXECUTABLE", "python")
+        print(f"python_cmd={python_cmd}")
+        cmd = [python_cmd, "hierarchical_main.py", config_path, "--skip-interaction", "--without-html"]
+        
+        if report_input.skip_extraction:
+            cmd.append("--skip-extraction")
+        if report_input.auto_cluster:
+            cmd.append("--auto-cluster")
         execution_dir = settings.TOOL_DIR / "pipeline"
         process = subprocess.Popen(cmd, cwd=execution_dir)
         threading.Thread(target=_monitor_process, args=(process, report_input.input), daemon=True).start()

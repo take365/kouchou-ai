@@ -310,6 +310,11 @@ export function useAISettings() {
   const isEmbeddedAtLocalDisabled = () => {
     return provider === "local";
   };
+  /**
+   * 要約処理をスキップするかどうか
+   * trueでスキップされる
+   */
+  const [skipExtraction, setSkipExtraction] = useState(false);
 
     /**
    * ローカルエンベディングモデル
@@ -378,5 +383,7 @@ export function useAISettings() {
     localEmbeddingModel,
     setLocalEmbeddingModel,
     getLocalEmbeddingModelOptions,
+    skipExtraction,
+    setSkipExtraction,
   };
 }

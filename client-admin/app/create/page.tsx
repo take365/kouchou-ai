@@ -148,6 +148,8 @@ export default function Page() {
         is_embedded_at_local: aiSettings.isEmbeddedAtLocal,
         local_llm_address: aiSettings.provider === "local" ? aiSettings.localLLMAddress : undefined,
         local_embedding_model: aiSettings.localEmbeddingModel,
+        skip_extraction: aiSettings.skipExtraction, 
+        auto_cluster: clusterSettings.autoClusterEnabled, 
       });
       
       toaster.create({
@@ -276,6 +278,8 @@ export default function Page() {
               localEmbeddingModel={aiSettings.localEmbeddingModel}
               setLocalEmbeddingModel={aiSettings.setLocalEmbeddingModel}
               getLocalEmbeddingModelOptions={aiSettings.getLocalEmbeddingModelOptions} 
+              skipExtraction={aiSettings.skipExtraction} 
+              setSkipExtraction={aiSettings.setSkipExtraction} 
             />
           </Presence>
 

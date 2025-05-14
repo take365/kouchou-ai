@@ -2,6 +2,7 @@ import { FileUploadDropzone, FileUploadList, FileUploadRoot } from "@/components
 import { Box, Tabs, VStack } from "@chakra-ui/react";
 import { DownloadIcon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { useClusterSettings } from "../hooks/useClusterSettings";
 import { parseCsv } from "../parseCsv";
 import { getBestCommentColumn } from "../utils/columnScorer";
@@ -26,6 +27,8 @@ export function CsvFileTab({
   setSelectedCommentColumn: (column: string) => void;
   clusterSettings: ReturnType<typeof useClusterSettings>;
 }) {
+  const [commentCount, setCommentCount] = useState(0); // ✅ コメント数ステートを追加
+
   return (
     <Tabs.Content value="file">
       <VStack alignItems="stretch" w="full">
@@ -44,6 +47,7 @@ export function CsvFileTab({
           <DownloadIcon size={14} />
           サンプルCSVをダウンロード
         </Link>
+
         <FileUploadRoot
           w={"full"}
           alignItems="stretch"
@@ -62,8 +66,10 @@ export function CsvFileTab({
                 const bestColumn = getBestCommentColumn(parsed);
                 if (bestColumn) {
                   setSelectedCommentColumn(bestColumn);
-                }              
+                }
+
                 clusterSettings.setRecommended(parsed.length);
+                setCommentCount(parsed.length); // ✅ コメント数を更新
               }
             }
           }}
@@ -84,16 +90,17 @@ export function CsvFileTab({
               setCsvColumns([]);
               setSelectedCommentColumn("");
               clusterSettings.resetClusterSettings();
+              setCommentCount(0); // ✅ リセット時にカウントも0に
             }}
           />
         </FileUploadRoot>
-        
+
         <CommentColumnSelector
           columns={csvColumns}
           selectedColumn={selectedCommentColumn}
           onColumnChange={setSelectedCommentColumn}
         />
-        
+
         <ClusterSettingsSection
           clusterLv1={clusterSettings.clusterLv1}
           clusterLv2={clusterSettings.clusterLv2}
@@ -101,6 +108,10 @@ export function CsvFileTab({
           autoAdjusted={clusterSettings.autoAdjusted}
           onLv1Change={clusterSettings.handleLv1Change}
           onLv2Change={clusterSettings.handleLv2Change}
+          calculateRecommendedClusters={clusterSettings.calculateRecommendedClusters}
+          autoClusterEnabled={clusterSettings.autoClusterEnabled}
+          setAutoClusterEnabled={clusterSettings.setAutoClusterEnabled}
+          commentCount={commentCount} // ✅ ここで渡す
         />
       </VStack>
     </Tabs.Content>
