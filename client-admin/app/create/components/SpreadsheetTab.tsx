@@ -78,7 +78,7 @@ export function SpreadsheetTab({
             onColumnChange={setSelectedCommentColumn}
           />
 
-          <AttributeColumnsSelector 
+          <AttributeColumnsSelector
             columns={csvColumns}
             selectedColumn={selectedCommentColumn}
             selectedAttributes={selectedAttributeColumns}
@@ -92,6 +92,10 @@ export function SpreadsheetTab({
             autoAdjusted={clusterSettings.autoAdjusted}
             onLv1Change={clusterSettings.handleLv1Change}
             onLv2Change={clusterSettings.handleLv2Change}
+            calculateRecommendedClusters={clusterSettings.calculateRecommendedClusters}
+            autoClusterEnabled={clusterSettings.autoClusterEnabled}
+            setAutoClusterEnabled={clusterSettings.setAutoClusterEnabled}
+            commentCount={spreadsheetData.length}
           />
         </Field.Root>
 

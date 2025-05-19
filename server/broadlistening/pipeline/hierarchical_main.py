@@ -38,11 +38,14 @@ def parse_arguments():
         action="store_true",
         help="Skip the html output.",
     )
+    parser.add_argument("--skip-extraction", action="store_true", help="Skip the extraction step.")
+    parser.add_argument("--auto-cluster", action="store_true", help="Automatically set cluster numbers based on comment count.")
     return parser.parse_args()
 
 
 def main():
     args = parse_arguments()
+    print(f"🔧 実行オプション: skip_extraction={args.skip_extraction}, auto_cluster={args.auto_cluster}")
 
     # Convert argparse namespace to sys.argv format for compatibility
     new_argv = [sys.argv[0], args.config]
@@ -54,6 +57,10 @@ def main():
         new_argv.append("-skip-interaction")
     if args.without_html:
         new_argv.append("--without-html")
+    if args.skip_extraction:
+        new_argv.append("--skip-extraction")
+    if args.auto_cluster:
+        new_argv.append("--auto-cluster")
 
     config = initialization(new_argv)
 

@@ -26,6 +26,11 @@ export function AISettingsSection({
   isEmbeddedAtLocal,
   onEmbeddedAtLocalChange,
   fetchLocalLLMModels,
+  localEmbeddingModel,
+  setLocalEmbeddingModel,
+  getLocalEmbeddingModelOptions,
+  skipExtraction,
+  setSkipExtraction,
 }: {
   provider: string;
   model: string;
@@ -56,10 +61,15 @@ export function AISettingsSection({
     setOverview: (value: string) => void;
   };
   isEmbeddedAtLocal: boolean;
+  localEmbeddingModel: string;
+  setLocalEmbeddingModel: (value: string) => void;
   onEmbeddedAtLocalChange: (checked: boolean | "indeterminate") => void;
+  getLocalEmbeddingModelOptions: () => { value: string; label: string }[];
+  skipExtraction: boolean;
+  setSkipExtraction: (value: boolean) => void;
 }) {
   const modelOptions = getCurrentModels();
-
+  const localModelOptions = getLocalEmbeddingModelOptions();
   return (
     <VStack gap={10}>
       <Field.Root>
@@ -163,6 +173,23 @@ export function AISettingsSection({
         >
           埋め込み処理をサーバ内で行う
         </Checkbox>
+        {isEmbeddedAtLocal && (
+          <Field.Root>
+            <Field.Label>ローカル埋め込みモデル</Field.Label>
+            <NativeSelect.Root w={"60%"}>
+              <NativeSelect.Field value={localEmbeddingModel} onChange={(e) => setLocalEmbeddingModel(e.target.value)}>
+                <option value="">選択してください</option>
+                {localModelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </NativeSelect.Field>
+              <NativeSelect.Indicator />
+            </NativeSelect.Root>
+            <Field.HelperText>サーバ内で使用するローカル埋め込みモデルを選択してください。</Field.HelperText>
+          </Field.Root>
+        )}
         <Field.HelperText>
           埋め込み処理をサーバ内で行うことで、APIの利用料金を削減します。
           精度に関しては未検証であり、OpenAIを使った場合と大きく異なる結果になる可能性があります。
@@ -173,7 +200,19 @@ export function AISettingsSection({
           )}
         </Field.HelperText>
       </Field.Root>
-
+      {/* ✅ 追加チェックボックス：抽出処理スキップ */}
+      <Field.Root>
+        <Checkbox
+          checked={skipExtraction}
+          onCheckedChange={(details) => {
+            const { checked } = details;
+            if (checked !== "indeterminate") setSkipExtraction(checked);
+          }}
+        >
+          抽出処理をスキップする
+        </Checkbox>
+        <Field.HelperText>抽出済のデータや整えられたデータを使用する場合にチェックしてください。</Field.HelperText>
+      </Field.Root>
       <Field.Root>
         <Field.Label>抽出プロンプト</Field.Label>
         <Textarea
@@ -203,7 +242,6 @@ export function AISettingsSection({
         />
         <Field.HelperText>AIに提示する統合ラベリングプロンプトです(通常は変更不要です)</Field.HelperText>
       </Field.Root>
-
       <Field.Root>
         <Field.Label>要約プロンプト</Field.Label>
         <Textarea

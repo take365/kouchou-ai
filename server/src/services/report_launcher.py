@@ -1,11 +1,11 @@
 import json
+import os
 import subprocess
 import threading
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
-
 from src.config import settings
 from src.schemas.admin_report import ReportInput
 from src.services.report_status import add_new_report_to_status, set_status
@@ -27,6 +27,7 @@ def _build_config(report_input: ReportInput) -> dict[str, Any]:
         "provider": report_input.provider,
         "is_pubcom": report_input.is_pubcom,
         "is_embedded_at_local": report_input.is_embedded_at_local,
+        "local_embedding_model": report_input.local_embedding_model,
         "local_llm_address": report_input.local_llm_address,
         "extraction": {
             "prompt": report_input.prompt.extraction,
@@ -132,7 +133,14 @@ def launch_report_generation(report_input: ReportInput) -> None:
         add_new_report_to_status(report_input)
         config_path = save_config_file(report_input)
         save_input_file(report_input)
-        cmd = ["python", "hierarchical_main.py", config_path, "--skip-interaction", "--without-html"]
+        python_cmd = os.environ.get("PYTHON_EXECUTABLE", "python")
+        print(f"python_cmd={python_cmd}")
+        cmd = [python_cmd, "hierarchical_main.py", config_path, "--skip-interaction", "--without-html"]
+        
+        if report_input.skip_extraction:
+            cmd.append("--skip-extraction")
+        if report_input.auto_cluster:
+            cmd.append("--auto-cluster")
         execution_dir = settings.TOOL_DIR / "pipeline"
         process = subprocess.Popen(cmd, cwd=execution_dir)
         threading.Thread(target=_monitor_process, args=(process, report_input.input), daemon=True).start()

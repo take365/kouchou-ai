@@ -22,6 +22,7 @@ def validate_config(config):
         "is_embedded_at_local",
         "provider",
         "local_llm_address",
+        "local_embedding_model", 
     ]
     step_names = [x["step"] for x in specs]
     for key in config:
@@ -118,7 +119,10 @@ def initialization(sysargv):
             config["skip-interaction"] = True
         if option == "--without-html":
             config["without-html"] = True
-
+        if option == "--skip-extraction":                            
+            config["skip_extraction"] = True
+        if option == "--auto-cluster":                               
+            config["auto_cluster"] = True
     output_dir = config["output_dir"]
 
     # check if job has run before
