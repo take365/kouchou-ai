@@ -4,6 +4,7 @@ import sys
 from hierarchical_utils import initialization, run_step, termination
 from steps.embedding import embedding
 from steps.extraction import extraction
+from steps.generate_simple_html import generate_simple_html
 from steps.hierarchical_aggregation import hierarchical_aggregation
 from steps.hierarchical_clustering import hierarchical_clustering
 from steps.hierarchical_initial_labelling import hierarchical_initial_labelling
@@ -65,6 +66,11 @@ def main():
         run_step("hierarchical_merge_labelling", hierarchical_merge_labelling, config)
         run_step("hierarchical_overview", hierarchical_overview, config)
         run_step("hierarchical_aggregation", hierarchical_aggregation, config)
+        try:
+            print("[INFO] Generating simple HTML report...")
+            generate_simple_html(config)
+        except Exception as e:
+            print(f"[WARN] Failed to generate simple HTML report: {e}")
         run_step("hierarchical_visualization", hierarchical_visualization, config)
 
         termination(config)

@@ -62,6 +62,12 @@ async def download_comments_csv(slug: str, api_key: str = Depends(verify_admin_a
         raise HTTPException(status_code=404, detail="CSV file not found")
     return FileResponse(path=str(csv_path), media_type="text/csv", filename=f"kouchou_{slug}.csv")
 
+@router.get("/admin/reports/{slug}/simple-html")
+def get_simple_report_html(slug: str):
+    file_path = settings.REPORT_DIR / slug / "simple_report.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Simple report not found.")
+    return FileResponse(file_path, media_type="text/html")
 
 @router.get("/admin/reports/{slug}/status/step-json", dependencies=[Depends(verify_admin_api_key)])
 async def get_current_step(slug: str) -> dict:
