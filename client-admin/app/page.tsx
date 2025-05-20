@@ -444,6 +444,25 @@ function ReportCard({
                 </Portal>
               </Popover.Root>
             )}
+            {/* ✅ 軽量HTMLレポートボタン（常設） */}
+            {report.status === "ready" && (
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`${getApiBaseUrl()}/admin/reports/${report.slug}/simple-html`, "_blank");
+                }}
+              >
+                <Tooltip content="１枚完結のHTMLレポートを表示" openDelay={0} closeDelay={0}>
+                  <Flex align="center" gap={1}>
+                    <Icon>
+                      <ExternalLinkIcon />
+                    </Icon>
+                    <Text fontSize="sm">シンプル版</Text>
+                  </Flex>
+                </Tooltip>
+              </Button>
+            )}
             {report.status === "ready" && (
               <Box
                 onClick={(e) => e.stopPropagation()}

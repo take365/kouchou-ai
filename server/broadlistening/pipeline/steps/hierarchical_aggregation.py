@@ -91,8 +91,11 @@ def create_custom_intro(config):
     print(f"Input count: {input_count}")
     print(f"Args count: {args_count}")
 
+#    base_custom_intro = """{intro}
+#分析対象となったデータの件数は{processed_num}件で、これらのデータに対してOpenAI APIを用いて{args_count}件の意見（議論）を抽出し、クラスタリングを行った。
+#"""
     base_custom_intro = """{intro}
-分析対象となったデータの件数は{processed_num}件で、これらのデータに対してOpenAI APIを用いて{args_count}件の意見（議論）を抽出し、クラスタリングを行った。
+分析対象となったデータは{processed_num}件で、LLM（大規模言語モデル）を用いて{args_count}件の意見（議論）を抽出し、それらを意見グループに分類した。
 """
 
     intro = config["intro"]
