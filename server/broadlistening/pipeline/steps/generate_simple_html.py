@@ -35,7 +35,6 @@ def generate_simple_html(config):
 
     # クラスタ構造を再構築
     clusters = result["clusters"]
-    cluster_by_id = {c["id"]: c for c in clusters}
     cluster_children = {}
     for c in clusters:
         parent = c.get("parent")
@@ -56,7 +55,7 @@ def generate_simple_html(config):
     for i, c in enumerate(level1_clusters):
         hue = (i * 0.14) % 1.0
         rgb = colorsys.hsv_to_rgb(hue, 0.6, 0.7)
-        hex_color = '#{:02x}{:02x}{:02x}'.format(int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255))
+        hex_color = f'#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}'
         color_map[c["id"]] = hex_color
 
     # 上位クラスタごとに属する arguments を収集（Lv2経由でない）
