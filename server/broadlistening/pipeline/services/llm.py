@@ -6,8 +6,10 @@ import openai
 from dotenv import load_dotenv
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_exponential)
 
+logging.basicConfig(level=logging.DEBUG)
 DOTENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.env"))
 load_dotenv(DOTENV_PATH)
 
@@ -182,6 +184,7 @@ def request_to_local_llm(
     Returns:
         LLMからのレスポンス
     """
+    logging.debug(f"[LocalLLM Request] model={model}, messages={messages}, address={address}")
     try:
         if ":" in address:
             host, port_str = address.split(":")
@@ -194,8 +197,26 @@ def request_to_local_llm(
         host = "localhost"
         port = 11434
 
-    base_url = f"http://{host}:{port}/v1"
+    print(f"address={address}")
+    if address.startswith("http") or address.startswith("https"):
+        base_url = f"{address.rstrip('/')}/v1"
+    else:
+        # host:port or just host
+        try:
+            if ":" in address:
+                host, port_str = address.split(":")
+                port = int(port_str)
+            else:
+                host = address
+                port = 11434  # デフォルトポート
+        except ValueError:
+            logging.warning(f"Invalid address format: {address}, using default")
+            host = "localhost"
+            port = 11434
 
+        base_url = f"http://{host}:{port}/v1"
+    #base_url = f"http://{host}:{port}/v1"
+    print(f"base_url={base_url}")
     try:
         client = OpenAI(
             base_url=base_url,
@@ -230,8 +251,9 @@ def request_to_local_llm(
             payload["response_format"] = response_format
 
         response = client.chat.completions.create(**payload)
-
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        logging.debug(f"[LocalLLM Response] chars={len(content)}, content={content[:300]}...")
+        return content
     except Exception as e:
         logging.error(
             f"LocalLLM API error: {e}, model:{model}, address:{address}, is_json:{is_json}, json_schema:{json_schema}, response_format:{response_format}"
