@@ -4,7 +4,6 @@ LLMモデルリスト取得サービス
 
 import httpx
 from openai import OpenAI
-
 from src.utils.logger import setup_logger
 
 slogger = setup_logger()
@@ -71,11 +70,13 @@ async def get_local_llm_models(address: str | None = None) -> list[dict[str, str
     if not address:
         address = "localhost:11434"  # Ollamaのデフォルトポート
 
-    if ":" in address:
-        host, port = address.split(":")
-        base_url = f"http://{host}:{port}/v1"
-    else:
+    if not address.startswith("http://") and not address.startswith("https://"):
         base_url = f"http://{address}/v1"
+    else:
+        # 最後に /v1 が含まれていなければ追加（あれば重複回避）
+        base_url = address
+        if not base_url.rstrip("/").endswith("/v1"):
+            base_url = base_url.rstrip("/") + "/v1"
 
     try:
         client = OpenAI(

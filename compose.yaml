@@ -103,6 +103,19 @@ services:
         ollama pull hf.co/elyza/Llama-3-ELYZA-JP-8B-GGUF
         tail -f /dev/null
 
+  light-llm:
+    build:
+      context: ./light-llm-server
+      dockerfile: Dockerfile
+    ports:
+      - "11434:11434"
+    networks:
+      - app-network
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - uvicorn app.main:app --host 0.0.0.0 --port 11434
+      
 networks:
   app-network:
     driver: bridge
