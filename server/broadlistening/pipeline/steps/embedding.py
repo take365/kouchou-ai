@@ -19,10 +19,12 @@ def embedding(config):
     arguments = df["argument"].tolist()
     arg_ids = df["arg-id"].tolist()
 
-    # ✅ OpenAIなどのAPI利用時のみ、トークン数でバッチ分割
     if not is_embedded_at_local:
+        # https://platform.openai.com/docs/api-reference/embeddings/create
+        # 8192トークン(llm.py）、配列2048次元、合計トークン数300,000を上限を配慮し余裕をもって制限する。
         tokenizer = tiktoken.encoding_for_model(model)
         MAX_TOTAL_TOKENS = 200_000
+        MAX_BATCH_SIZE = 1000
 
         batches = []
         current_batch = []
@@ -30,7 +32,7 @@ def embedding(config):
 
         for arg in arguments:
             tokens = len(tokenizer.encode(arg))
-            if current_tokens + tokens > MAX_TOTAL_TOKENS:
+            if (current_tokens + tokens > MAX_TOTAL_TOKENS) or (len(current_batch) >= MAX_BATCH_SIZE):
                 batches.append(current_batch)
                 current_batch = []
                 current_tokens = 0
@@ -40,7 +42,6 @@ def embedding(config):
         if current_batch:
             batches.append(current_batch)
     else:
-        # ローカル埋め込みならそのまま1バッチでOK
         batches = [arguments]
 
     embeddings = []
