@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 from importlib import import_module
@@ -8,6 +9,8 @@ import scipy.cluster.hierarchy as sch
 from hierarchical_utils import update_status
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+
+logging.getLogger("numba").setLevel(logging.WARNING)
 
 
 def hierarchical_clustering(config):
