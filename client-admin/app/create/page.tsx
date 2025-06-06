@@ -18,8 +18,26 @@ import { useInputData } from "./hooks/useInputData";
 import { usePromptSettings } from "./hooks/usePromptSettings";
 import { type CsvData, parseCsv } from "./parseCsv";
 import { showErrorToast } from "./utils/error-handler";
+import { generateDefaultQuestionTitle } from "./utils/generateTitle";
 import { validateFormValues } from "./utils/validation";
 
+function generateClusterList(min: number, topMax: number, bottomMax: number): number[] {
+  const clusters: number[] = [];
+
+  let current = min;
+  while (current <= topMax) {
+    clusters.push(current);
+    current *= 2;
+  }
+
+  current = topMax + 1;
+  while (current <= bottomMax) {
+    clusters.push(current);
+    current *= 2;
+  }
+
+  return clusters;
+}
 /**
  * レポート作成ページ
  */
@@ -83,13 +101,13 @@ export default function Page() {
         const parsed = await parseCsv(inputData.csv);
         comments = parsed.map((row, index) => {
           const rowData = row as unknown as Record<string, unknown>;
-          
+
           // コメントオブジェクトの作成（基本フィールド）
           const comment: CsvData = {
             id: row.id || `csv-${index + 1}`,
             comment: rowData[inputData.selectedCommentColumn] as string,
-            source: rowData.source as string || null,
-            url: rowData.url as string || null,
+            source: (rowData.source as string) || null,
+            url: (rowData.url as string) || null,
           };
 
           // 選択された属性カラムの値を直接追加（"attribute" プレフィックス付き）
@@ -151,11 +169,21 @@ export default function Page() {
 
     try {
       const promptData = promptSettings.getPromptSettings();
+      // ✅ タイトルと調査概要の補完
+      const input = basicInfo.input;
+      let question = basicInfo.question.trim();
+      let intro = basicInfo.intro.trim();
 
+      if (question === "") {
+        question = generateDefaultQuestionTitle({ inputData, clusterSettings, aiSettings });
+      }
+      if (intro === "") {
+        intro = "";
+      }
       await createReport({
         input: basicInfo.input,
-        question: basicInfo.question,
-        intro: basicInfo.intro,
+        question,
+        intro,
         comments,
         cluster: [clusterSettings.clusterLv1, clusterSettings.clusterLv2],
         provider: aiSettings.provider,
@@ -167,6 +195,15 @@ export default function Page() {
         is_embedded_at_local: aiSettings.isEmbeddedAtLocal,
         enable_source_link: aiSettings.enableSourceLink,
         local_llm_address: aiSettings.provider === "local" ? aiSettings.localLLMAddress : undefined,
+        skip_extraction: aiSettings.skipExtraction,
+        skip_initial_labelling: aiSettings.skipInitialLabelling,
+        skip_merge_labelling: aiSettings.skipMergeLabelling,
+        skip_overview: aiSettings.skipOverview,
+        auto_cluster_enabled: clusterSettings.autoClusterEnabled,
+        clusterLv1_min: clusterSettings.clusterLv1Min,
+        clusterLv1_max: clusterSettings.clusterLv1Max,
+        clusterLv2_min: clusterSettings.clusterLv2Min,
+        clusterLv2_max: clusterSettings.clusterLv2Max,
       });
 
       toaster.create({
@@ -296,6 +333,15 @@ export default function Page() {
               requiresConnectionSettings={aiSettings.requiresConnectionSettings}
               isEmbeddedAtLocalDisabled={aiSettings.isEmbeddedAtLocalDisabled}
               promptSettings={promptSettings}
+              // ✅ スキップ系の追加
+              skipExtraction={aiSettings.skipExtraction}
+              setSkipExtraction={aiSettings.setSkipExtraction}
+              skipInitialLabelling={aiSettings.skipInitialLabelling}
+              setSkipInitialLabelling={aiSettings.setSkipInitialLabelling}
+              skipMergeLabelling={aiSettings.skipMergeLabelling}
+              setSkipMergeLabelling={aiSettings.setSkipMergeLabelling}
+              skipOverview={aiSettings.skipOverview}
+              setSkipOverview={aiSettings.setSkipOverview}
             />
           </Presence>
 

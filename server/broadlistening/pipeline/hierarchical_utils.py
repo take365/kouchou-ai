@@ -44,7 +44,7 @@ def validate_config(config):
         if key not in valid_fields and key not in step_names:
             raise Exception(f"Unknown field '{key}' in config")
     for step_spec in specs:
-        valid_options = list(step_spec.get("options", {}).keys())
+        valid_options = list(step_spec.get("options", {}).keys()) + ["skip"]  # ✅ skipを明示的に許可
         if step_spec.get("use_llm"):
             valid_options = valid_options + ["prompt", "model", "prompt_file"]
         for key in config.get(step_spec["step"], {}):
