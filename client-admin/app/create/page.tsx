@@ -83,13 +83,13 @@ export default function Page() {
         const parsed = await parseCsv(inputData.csv);
         comments = parsed.map((row, index) => {
           const rowData = row as unknown as Record<string, unknown>;
-          
+
           // コメントオブジェクトの作成（基本フィールド）
           const comment: CsvData = {
             id: row.id || `csv-${index + 1}`,
             comment: rowData[inputData.selectedCommentColumn] as string,
-            source: rowData.source as string || null,
-            url: rowData.url as string || null,
+            source: (rowData.source as string) || null,
+            url: (rowData.url as string) || null,
           };
 
           // 選択された属性カラムの値を直接追加（"attribute" プレフィックス付き）
@@ -175,7 +175,7 @@ export default function Page() {
         title: "レポート作成を開始しました",
       });
 
-      router.replace("/");
+      router.push(`/progress/${basicInfo.input}`);
     } catch (e) {
       showErrorToast(toaster, e, "レポート作成に失敗しました");
     } finally {
@@ -303,9 +303,14 @@ export default function Page() {
           <WarningSection />
 
           {/* 送信ボタン */}
-          <Button mt={10} className={"gradientBg shadow"} size={"2xl"} w={"300px"} onClick={onSubmit} loading={loading}>
-            レポート作成を開始
-          </Button>
+          <HStack mt={10} spacing={4}>
+            <Button className={"gradientBg shadow"} size={"2xl"} w={"300px"} onClick={onSubmit} loading={loading}>
+              レポート作成を開始
+            </Button>
+            <Button colorScheme="teal" size={"2xl"} w={"300px"} onClick={onSubmit} loading={loading}>
+              レポート作成(別色)
+            </Button>
+          </HStack>
         </VStack>
       </Box>
     </div>
