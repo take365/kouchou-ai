@@ -38,6 +38,17 @@ class ReportInput(SchemaBaseModel):
 
     # NOTE: team-mirai feature
     enable_source_link: bool = False  # ソースリンク機能を有効にするかどうか。有効にする場合はtrue
+    skip_extraction: bool = False  # 意見抽出スキップ
+    skip_initial_labelling: bool = False  # 初期ラベリングスキップ
+    skip_merge_labelling: bool = False  # 統合ラベリングスキップ
+    skip_overview: bool = False  # 要約プロンプトスキップ
+
+    auto_cluster_enabled: bool = False  # 自動クラスタ数設定
+    clusterLv1_min: int | None = None  # 自動クラスタ範囲（上位層最小）
+    clusterLv1_max: int | None = None  # 自動クラスタ範囲（上位層最大）
+    clusterLv2_min: int | None = None  # 自動クラスタ範囲（下位層最小）
+    clusterLv2_max: int | None = None  # 自動クラスタ範囲（下位層最大）
+
 
 
 class ReportVisibilityUpdate(SchemaBaseModel):

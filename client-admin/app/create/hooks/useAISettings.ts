@@ -1,7 +1,7 @@
 import { toaster } from "@/components/ui/toaster";
 import { type ChangeEvent, useEffect, useState } from "react";
 
-export type Provider = "openai" | "azure" | "openrouter" | "local";
+export type Provider = "openai" | "azure" | "openrouter" | "local" | "none";
 
 export interface ModelOption {
   value: string;
@@ -124,6 +124,10 @@ export function useAISettings() {
 
   const [openRouterModels, setOpenRouterModels] = useState<ModelOption[]>([]);
   const [localLLMModels, setLocalLLMModels] = useState<ModelOption[]>([]);
+  const [skipExtraction, setSkipExtraction] = useState(false);
+  const [skipInitialLabelling, setSkipInitialLabelling] = useState(false);
+  const [skipMergeLabelling, setSkipMergeLabelling] = useState(false);
+  const [skipOverview, setSkipOverview] = useState(false);
 
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.PROVIDER, provider);
@@ -215,6 +219,11 @@ export function useAISettings() {
       models: localLLMModels,
       description: "ローカルで実行されているLLMサーバーに接続します。",
       requiresConnection: true,
+    },
+    none: {
+      models: [],
+      description:
+        "AIプロバイダーを使用せず、エンベディングのみローカルで実行されます。すべてのLLM処理はスキップされます。",
     },
   };
 
@@ -367,5 +376,13 @@ export function useAISettings() {
     resetAISettings,
     setIsEmbeddedAtLocal,
     fetchLocalLLMModels,
+    skipExtraction,
+    setSkipExtraction,
+    skipInitialLabelling,
+    setSkipInitialLabelling,
+    skipMergeLabelling,
+    setSkipMergeLabelling,
+    skipOverview,
+    setSkipOverview,
   };
 }

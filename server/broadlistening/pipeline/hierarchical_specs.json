@@ -22,8 +22,15 @@
         "step": "hierarchical_clustering",
         "filename": "hierarchical_clusters.csv",
         "dependencies": {"params": ["cluster_nums"], "steps": ["embedding"]},
-        "options": {"cluster_nums": [3, 6]}
-    },
+        "options": {
+            "cluster_nums": [3, 6],
+            "auto_cluster_enabled": false,
+            "cluster_lv1_min": 2,
+            "cluster_lv1_max": 10,
+            "cluster_lv2_min": 11,
+            "cluster_lv2_max": 20
+        }
+        },
     {
         "step": "hierarchical_initial_labelling",
         "filename": "hierarchical_initial_labels.csv",

@@ -3,6 +3,7 @@ import os
 import threading
 
 import openai
+import tiktoken
 from dotenv import load_dotenv
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
@@ -11,6 +12,8 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 DOTENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.env"))
 load_dotenv(DOTENV_PATH)
 
+log_level = os.getenv("LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(level=getattr(logging, log_level, logging.WARNING))
 # check env
 use_azure = os.getenv("USE_AZURE", "false").lower()
 
@@ -380,6 +383,7 @@ def request_to_embed(args, model, is_embedded_at_local=False, provider="openai",
     elif provider == "openai":
         logging.info("request_to_openai_embed")
         _validate_model(model)
+        args = preprocess_openai_embed_args(args, model)  # ✅ トークン長チェック＋切り捨て
         client = OpenAI()
         response = client.embeddings.create(input=args, model=model)
         embeds = [item.embedding for item in response.data]
@@ -391,6 +395,24 @@ def request_to_embed(args, model, is_embedded_at_local=False, provider="openai",
         return request_to_local_llm_embed(args, model, address)
     else:
         raise ValueError(f"Unknown provider: {provider}")
+
+
+def preprocess_openai_embed_args(args: list[str], model: str, max_tokens: int = 8000) -> list[str]:
+    # OpenAI埋め込みモデル（例: text-embedding-3-small）に対して、
+    # 各引数をトークン数でチェックし、超過する場合は切り捨て＋警告を行う。
+    tokenizer = tiktoken.encoding_for_model(model)
+    processed_args = []
+
+    for i, text in enumerate(args):
+        tokens = tokenizer.encode(text)
+        if len(tokens) > max_tokens:
+            logging.warning(
+                f"⚠ 入力 arg[{i}] は {len(tokens)} トークンで上限 {max_tokens} を超過。先頭 {max_tokens} トークンに切り捨てます。"
+            )
+            text = tokenizer.decode(tokens[:max_tokens])
+        processed_args.append(text)
+
+    return processed_args
 
 
 def request_to_azure_embed(args, model):
@@ -411,19 +433,30 @@ def request_to_azure_embed(args, model):
 
 __local_emb_model = None
 __local_emb_model_loading_lock = threading.Lock()
+__local_emb_tokenizer = None  # ✅ 追加：トークナイザもキャッシュ
 
 
 def request_to_local_embed(args):
-    global __local_emb_model
-    # memo: モデルを遅延ロード＆キャッシュするために、グローバル変数を使用
+    global __local_emb_model, __local_emb_tokenizer
 
     with __local_emb_model_loading_lock:
-        # memo: スレッドセーフにするためにロックを使用
         if __local_emb_model is None:
             from sentence_transformers import SentenceTransformer
 
             model_name = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
             __local_emb_model = SentenceTransformer(model_name)
+
+        if __local_emb_tokenizer is None:
+            from transformers import AutoTokenizer
+
+            __local_emb_tokenizer = AutoTokenizer.from_pretrained(
+                "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+            )
+
+    for i, arg in enumerate(args):
+        token_len = len(__local_emb_tokenizer.encode(arg, truncation=True))
+        if token_len > 128:
+            logging.warning(f"arg[{i}] は {token_len} トークン（上限128）で超過。自動的に切り捨てられます。")
 
     result = __local_emb_model.encode(args)
     return result.tolist()

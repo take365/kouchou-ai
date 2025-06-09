@@ -1,5 +1,6 @@
-import { Button, Field, HStack, Input, Text } from "@chakra-ui/react";
-import { ChevronRightIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, HStack, Input, Text } from "@chakra-ui/react";
+import type { Warning } from "../hooks/useClusterSettings";
 import type { ClusterSettings } from "../types";
 
 export function ClusterSettingsSection({
@@ -9,6 +10,17 @@ export function ClusterSettingsSection({
   autoAdjusted,
   onLv1Change,
   onLv2Change,
+  autoClusterEnabled,
+  clusterLv1Min,
+  clusterLv1Max,
+  clusterLv2Min,
+  clusterLv2Max,
+  onAutoClusterToggle,
+  onLv1MinChange,
+  onLv1MaxChange,
+  onLv2MinChange,
+  onLv2MaxChange,
+  manualWarnings,
 }: {
   clusterLv1: number;
   clusterLv2: number;
@@ -16,66 +28,125 @@ export function ClusterSettingsSection({
   autoAdjusted: boolean;
   onLv1Change: (value: number) => void;
   onLv2Change: (value: number) => void;
+  autoClusterEnabled: boolean;
+  clusterLv1Min: number;
+  clusterLv1Max: number;
+  clusterLv2Min: number;
+  clusterLv2Max: number;
+  onAutoClusterToggle: (value: boolean) => void;
+  onLv1MinChange: (value: number) => void;
+  onLv1MaxChange: (value: number) => void;
+  onLv2MinChange: (value: number) => void;
+  onLv2MaxChange: (value: number) => void;
+  manualWarnings: Warning[];
 }) {
   if (!recommendedClusters) return null;
 
+  const lv1HasWarning = manualWarnings.some((w) => w.field === "lv1");
+  const lv2HasWarning = manualWarnings.some((w) => w.field === "lv2");
+
   return (
     <Field.Root mt={4}>
-      <Field.Label>意見グループ数設定</Field.Label>
-      <HStack w={"100%"}>
-        <Button onClick={() => onLv1Change(clusterLv1 - 1)} variant="outline">
-          -
-        </Button>
-        <Input
-          type="number"
-          value={clusterLv1.toString()}
-          min={2}
-          max={40}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            if (!Number.isNaN(v)) {
-              onLv1Change(v);
-            }
-          }}
-        />
-        <Button onClick={() => onLv1Change(clusterLv1 + 1)} variant="outline">
-          +
-        </Button>
-        <ChevronRightIcon width="100px" />
-        <Button onClick={() => onLv2Change(clusterLv2 - 1)} variant="outline">
-          -
-        </Button>
-        <Input
-          type="number"
-          value={clusterLv2.toString()}
-          min={2}
-          max={1000}
-          onChange={(e) => {
-            const inputValue = e.target.value;
-            if (inputValue === "") return;
-            const v = Number(inputValue);
-            if (!Number.isNaN(v)) {
-              onLv2Change(v);
-            }
-          }}
-          onBlur={(e) => {
-            const v = Number(e.target.value);
-            if (!Number.isNaN(v)) {
-              onLv2Change(v);
-            }
-          }}
-        />
-        <Button onClick={() => onLv2Change(clusterLv2 + 1)} variant="outline">
-          +
-        </Button>
+      <HStack justify="space-between" w="100%" align="center">
+        <Field.Label>意見グループ数設定</Field.Label>
+        <Checkbox checked={autoClusterEnabled} onCheckedChange={({ checked }) => onAutoClusterToggle(checked === true)}>
+          グループ数を自動で決定する
+        </Checkbox>
       </HStack>
-      <Field.HelperText>
-        階層ごとの意見グループ生成数です。初期値はコメント数に基づいた推奨意見グループ数です。
-      </Field.HelperText>
-      {autoAdjusted && (
-        <Text color="orange.500" fontSize="sm" mt={2}>
-          第2階層の意見グループ数が自動調整されました。第2階層の意見グループ数は第1階層の意見グループ数の2倍以上に設定してください。
+
+      <HStack mt={3} flexWrap="wrap" w="100%" align="center">
+        <Text fontSize="sm" w="100px">
+          第一階層
         </Text>
+        {autoClusterEnabled ? (
+          <>
+            <Input
+              type="number"
+              value={clusterLv1Min.toString()}
+              onChange={(e) => onLv1MinChange(Number(e.target.value))}
+              size="sm"
+              w="81px"
+            />
+            <Text fontSize="sm" mx={1}>
+              ～
+            </Text>
+            <Input
+              type="number"
+              value={clusterLv1Max.toString()}
+              onChange={(e) => onLv1MaxChange(Number(e.target.value))}
+              size="sm"
+              w="81px"
+            />
+            <Text fontSize="sm" mx={3} w="40px" textAlign="center">
+              ▶
+            </Text>
+            <Text fontSize="sm" w="100px">
+              第二階層
+            </Text>
+            <Input
+              type="number"
+              value={clusterLv2Min.toString()}
+              onChange={(e) => onLv2MinChange(Number(e.target.value))}
+              size="sm"
+              w="81px"
+            />
+            <Text fontSize="sm" mx={1}>
+              ～
+            </Text>
+            <Input
+              type="number"
+              value={clusterLv2Max.toString()}
+              onChange={(e) => onLv2MaxChange(Number(e.target.value))}
+              size="sm"
+              w="81px"
+            />
+          </>
+        ) : (
+          <>
+            <Input
+              type="number"
+              value={clusterLv1.toString()}
+              onChange={(e) => onLv1Change(Number(e.target.value))}
+              min={clusterLv1Min}
+              max={clusterLv1Max}
+              size="sm"
+              w="200px"
+            />
+            <Text fontSize="sm" mx={3} w="40px" textAlign="center">
+              ▶
+            </Text>
+            <Text fontSize="sm" w="100px">
+              第二階層
+            </Text>
+            <Input
+              type="number"
+              value={clusterLv2.toString()}
+              onChange={(e) => onLv2Change(Number(e.target.value))}
+              min={clusterLv2Min}
+              max={clusterLv2Max}
+              size="sm"
+              w="200px"
+            />
+          </>
+        )}
+      </HStack>
+
+      {manualWarnings.map((w) => (
+        <Text key={`${w.field}-${w.message}`} fontSize="sm" color="orange.500">
+          {w.message}
+        </Text>
+      ))}
+
+      {autoClusterEnabled ? (
+        <Field.HelperText mt={2}>
+          階層ごとの意見グループ生成数を「下限 ～ 上限」の範囲で自動的に評価し、最適な数を決定します。
+        </Field.HelperText>
+      ) : (
+        <>
+          <Field.HelperText mt={2}>
+            階層ごとの意見グループ生成数を手動で設定します。初期値はコメント数に基づいた推奨意見グループ数です。
+          </Field.HelperText>
+        </>
       )}
     </Field.Root>
   );

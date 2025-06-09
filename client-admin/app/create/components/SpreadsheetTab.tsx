@@ -92,6 +92,17 @@ export function SpreadsheetTab({
             autoAdjusted={clusterSettings.autoAdjusted}
             onLv1Change={clusterSettings.handleLv1Change}
             onLv2Change={clusterSettings.handleLv2Change}
+            autoClusterEnabled={clusterSettings.autoClusterEnabled}
+            clusterLv1Min={clusterSettings.clusterLv1Min}
+            clusterLv1Max={clusterSettings.clusterLv1Max}
+            clusterLv2Min={clusterSettings.clusterLv2Min}
+            clusterLv2Max={clusterSettings.clusterLv2Max}
+            onAutoClusterToggle={clusterSettings.handleAutoClusterToggle}
+            onLv1MinChange={clusterSettings.handleLv1MinChange}
+            onLv1MaxChange={clusterSettings.handleLv1MaxChange}
+            onLv2MinChange={clusterSettings.handleLv2MinChange}
+            onLv2MaxChange={clusterSettings.handleLv2MaxChange}
+            manualWarnings={clusterSettings.manualWarnings}
           />
         </Field.Root>
 

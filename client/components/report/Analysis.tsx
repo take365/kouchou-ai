@@ -1,5 +1,4 @@
 "use client";
-
 import { getClusterNum } from "@/app/utils/cluster-num";
 import {
   DrawerBackdrop,
@@ -19,7 +18,7 @@ import {
   TimelineTitle,
 } from "@/components/ui/timeline";
 import { Tooltip } from "@/components/ui/tooltip";
-import type { Result } from "@/type";
+import type { AutoClusterResult, Result } from "@/type";
 import {
   Box,
   Button,
@@ -40,19 +39,33 @@ import {
   MessageCircleWarningIcon,
   MessagesSquareIcon,
 } from "lucide-react";
-import { useState } from "react";
-
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+const AutoClusterScoreChartClient = dynamic(() => import("./AutoClusterScoreChartClient"), {
+  ssr: false,
+});
 type ReportProps = {
   result: Result;
 };
 
 export function Analysis({ result }: ReportProps) {
+  const [autoClusterData, setAutoClusterData] = useState<AutoClusterResult | null>(null);
   const [selectedData, setSelectedData] = useState<{
     title: string;
     body: string;
   } | null>(null);
   const clusterNum = getClusterNum(result);
   const { open, onToggle } = useDisclosure();
+
+  // Analysis 関数の中にこれを入れる
+  useEffect(() => {
+    if (
+      !result.config.hierarchical_clustering.auto_cluster_enabled ||
+      !result.config.hierarchical_clustering.auto_cluster_result
+    )
+      return;
+    setAutoClusterData(result.config.hierarchical_clustering.auto_cluster_result);
+  }, [result]);
 
   return (
     <Box mx={"auto"} maxW={"750px"} mb={12} cursor={"default"}>
@@ -138,7 +151,9 @@ export function Analysis({ result }: ReportProps) {
                 </TimelineConnector>
                 {p.step === "extraction" && (
                   <TimelineContent>
-                    <TimelineTitle fontWeight={"bold"}>抽出 ({result.config.extraction.model})</TimelineTitle>
+                    <TimelineTitle fontWeight={"bold"}>
+                      抽出 ({result.config.extraction.skip ? "スキップ" : result.config.extraction.model})
+                    </TimelineTitle>
                     <TimelineDescription>
                       コメントデータから意見を抽出するステップです。
                       <br />
@@ -221,13 +236,31 @@ export function Analysis({ result }: ReportProps) {
                       >
                         ソースコード
                       </Button>
+                      {result.config.hierarchical_clustering.auto_cluster_enabled && (
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() =>
+                            setSelectedData({
+                              title: "グループ数試行結果",
+                              body: JSON.stringify(result.config.hierarchical_clustering.auto_cluster_result, null, 2),
+                            })
+                          }
+                        >
+                          グループ数試行結果
+                        </Button>
+                      )}
                     </HStack>
                   </TimelineContent>
                 )}
                 {p.step === "hierarchical_initial_labelling" && (
                   <TimelineContent>
                     <TimelineTitle fontWeight={"bold"}>
-                      初期ラベリング ({result.config.hierarchical_initial_labelling.model})
+                      初期ラベリング (
+                      {result.config.hierarchical_initial_labelling.skip
+                        ? "スキップ"
+                        : result.config.hierarchical_initial_labelling.model}
+                      )
                     </TimelineTitle>
                     <TimelineDescription>
                       意見グループ化の結果に対して、各意見グループに適切なタイトル・説明文を生成（ラベリング）するステップです。
@@ -265,7 +298,11 @@ export function Analysis({ result }: ReportProps) {
                 {p.step === "hierarchical_merge_labelling" && (
                   <TimelineContent>
                     <TimelineTitle fontWeight={"bold"}>
-                      統合ラベリング ({result.config.hierarchical_merge_labelling.model})
+                      統合ラベリング (
+                      {result.config.hierarchical_merge_labelling.skip
+                        ? "スキップ"
+                        : result.config.hierarchical_merge_labelling.model}
+                      )
                     </TimelineTitle>
                     <TimelineDescription>
                       意見グループを統合し、統合されたグループのタイトルと説明文を生成（ラベリング）するステップです。
@@ -285,6 +322,7 @@ export function Analysis({ result }: ReportProps) {
                       >
                         ソースコード
                       </Button>
+
                       <Button
                         variant={"outline"}
                         size={"xs"}
@@ -303,7 +341,11 @@ export function Analysis({ result }: ReportProps) {
                 {p.step === "hierarchical_overview" && (
                   <TimelineContent>
                     <TimelineTitle fontWeight={"bold"}>
-                      要約 ({result.config.hierarchical_overview.model})
+                      要約 (
+                      {result.config.hierarchical_overview.skip
+                        ? "スキップ"
+                        : result.config.hierarchical_overview.model}
+                      )
                     </TimelineTitle>
                     <TimelineDescription>
                       意見グループの概要を作成するステップです。
@@ -399,6 +441,21 @@ export function Analysis({ result }: ReportProps) {
             <DrawerTitle>{selectedData?.title}</DrawerTitle>
           </DrawerHeader>
           <DrawerBody fontSize={"xs"}>
+            {/* 🔽 ここにグラフ差し込み条件分岐 */}
+            {(() => {
+              try {
+                return selectedData?.title === "グループ数試行結果" && autoClusterData ? (
+                  <AutoClusterScoreChartClient
+                    data={autoClusterData.results}
+                    bestLv1={autoClusterData.best.lv1.k}
+                    bestLv2={autoClusterData.best.lv2.k}
+                    durationSec={autoClusterData.duration_sec}
+                  />
+                ) : null;
+              } catch (e) {
+                return <Text color="red.400">グラフの描画に失敗しました</Text>;
+              }
+            })()}
             <Box p={5} borderRadius={5} bgColor={"#111"} color={"#fff"} whiteSpace={"pre-wrap"} className={"code"}>
               {selectedData?.body}
             </Box>
