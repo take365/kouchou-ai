@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import useReportProgressPoll from "./hooks/useReportProgressPoll";
 
 // ステップの定義
 const stepKeys = [
@@ -91,203 +92,6 @@ function getStatusDisplay(status: string) {
   }
 }
 
-// カスタムフック：fetchを用いて指定レポートの進捗を定期ポーリングで取得
-function useReportProgressPoll(slug: string, shouldSubscribe: boolean) {
-  const [progress, setProgress] = useState<string>("loading");
-  const [errorStep, setErrorStep] = useState<string | null>(null);
-  const [lastValidStep, setLastValidStep] = useState<string>("loading");
-  const [isPolling, setIsPolling] = useState<boolean>(true);
-  const [tokenUsage, setTokenUsage] = useState<number>(0);
-  const [tokenUsageInput, setTokenUsageInput] = useState<number>(0);
-  const [tokenUsageOutput, setTokenUsageOutput] = useState<number>(0);
-  const [estimatedCost, setEstimatedCost] = useState<number>(0);
-  const [provider, setProvider] = useState<string | null>(null);
-  const [model, setModel] = useState<string | null>(null);
-  const [pricingData, setPricingData] = useState<Record<string, Record<string, { input: number; output: number }>>>({});
-  const [isPricingLoaded, setIsPricingLoaded] = useState<boolean>(false);
-
-  // LLM価格情報を取得する
-  useEffect(() => {
-    async function fetchPricingData() {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASEPATH}/admin/llm-pricing`, {
-          headers: {
-            "x-api-key": process.env.NEXT_PUBLIC_ADMIN_API_KEY || "",
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setPricingData(data);
-        } else {
-          console.error("Failed to fetch LLM pricing data");
-          // APIから取得できない場合は空のオブジェクトを設定（情報なし）
-          setPricingData({});
-        }
-        setIsPricingLoaded(true);
-      } catch (error) {
-        console.error("Error fetching LLM pricing data:", error);
-        setIsPricingLoaded(true);
-      }
-    }
-
-    fetchPricingData();
-  }, []);
-
-
-  // トークン使用量から推定コストを計算する関数
-  const calculateCost = (
-    provider: string | null,
-    model: string | null,
-    tokenUsageInput: number,
-    tokenUsageOutput: number
-  ): number => {
-    if (!provider || !model || !isPricingLoaded) return 0;
-    
-    const price = pricingData[provider]?.[model];
-    if (!price) return 0; // 不明なモデルの場合は 0 を返す
-    
-    const inputCost = (tokenUsageInput / 1_000_000) * price.input;
-    const outputCost = (tokenUsageOutput / 1_000_000) * price.output;
-    return inputCost + outputCost;
-  };
-
-  // hasReloaded のデフォルト値を false に設定
-  const [hasReloaded, setHasReloaded] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!shouldSubscribe || !isPolling) return;
-
-    let cancelled = false;
-    let retryCount = 0;
-    const maxRetries = 10;
-
-    async function poll() {
-      if (cancelled) return;
-
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASEPATH}/admin/reports/${slug}/status/step-json`, {
-          headers: {
-            "x-api-key": process.env.NEXT_PUBLIC_ADMIN_API_KEY || "",
-            "Content-Type": "application/json",
-            // キャッシュを防止するためのヘッダーを追加
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-
-          if (data.token_usage !== undefined) {
-            setTokenUsage(data.token_usage);
-          }
-          if (data.token_usage_input !== undefined) {
-            setTokenUsageInput(data.token_usage_input);
-          }
-          if (data.token_usage_output !== undefined) {
-            setTokenUsageOutput(data.token_usage_output);
-          }
-          if (data.estimated_cost !== undefined) {
-            setEstimatedCost(data.estimated_cost);
-          }
-          if (data.provider !== undefined) {
-            setProvider(data.provider);
-          }
-          if (data.model !== undefined) {
-            setModel(data.model);
-          }
-          
-          // トークン使用量が更新されたら、推定コストも計算して更新
-          if (
-            (data.token_usage_input !== undefined || data.token_usage_output !== undefined) &&
-            data.provider !== undefined &&
-            data.model !== undefined
-          ) {
-            const newTokenUsageInput = data.token_usage_input !== undefined ? data.token_usage_input : tokenUsageInput;
-            const newTokenUsageOutput = data.token_usage_output !== undefined ? data.token_usage_output : tokenUsageOutput;
-            const newEstimatedCost = calculateCost(
-              data.provider,
-              data.model,
-              newTokenUsageInput,
-              newTokenUsageOutput
-            );
-            setEstimatedCost(newEstimatedCost);
-          }
-
-          if (!data.current_step || data.current_step === "loading") {
-            retryCount = 0;
-            setTimeout(poll, 3000);
-            return;
-          }
-
-          if (data.current_step === "error") {
-            setErrorStep(data.error_step || lastValidStep);
-            setProgress("error");
-            setIsPolling(false);
-            return;
-          }
-
-          setLastValidStep(data.current_step);
-          setErrorStep(null);
-          setProgress(data.current_step);
-
-          if (data.current_step === "completed") {
-            setIsPolling(false);
-            return;
-          }
-
-          // 正常なレスポンスの場合は次のポーリングをスケジュール
-          setTimeout(poll, 3000);
-        } else {
-          retryCount++;
-          if (retryCount >= maxRetries) {
-            console.error("Maximum retry attempts reached");
-            setProgress("error");
-            setIsPolling(false);
-            return;
-          }
-          const retryInterval = retryCount < 3 ? 2000 : 5000;
-          setTimeout(poll, retryInterval);
-        }
-      } catch (error) {
-        console.error("Polling error:", error);
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          setProgress("error");
-          setIsPolling(false);
-          return;
-        }
-        setTimeout(poll, 5000);
-      }
-    }
-
-    poll();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, shouldSubscribe, lastValidStep, isPolling]);
-
-  useEffect(() => {
-    // 完了またはエラーでかつリロード済みでない場合
-    if ((progress === "completed" || progress === "error") && !hasReloaded) {
-      setHasReloaded(true);
-
-      const reloadTimeout = setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-
-      return () => clearTimeout(reloadTimeout);
-    }
-  }, [progress, hasReloaded]);
-
-  return { progress, errorStep, tokenUsage, tokenUsageInput, tokenUsageOutput, estimatedCost, provider, model };
-}
-
 // 個々のレポートカードコンポーネント
 function ReportCard({
   report,
@@ -299,10 +103,8 @@ function ReportCard({
   setReports?: (reports: Report[] | undefined) => void;
 }) {
   const statusDisplay = getStatusDisplay(report.status);
-  const { progress, errorStep, tokenUsage, tokenUsageInput, tokenUsageOutput, estimatedCost, provider, model } = useReportProgressPoll(
-    report.slug,
-    report.status !== "ready",
-  );
+  const { progress, errorStep, tokenUsage, tokenUsageInput, tokenUsageOutput, estimatedCost, provider, model } =
+    useReportProgressPoll(report.slug, report.status !== "ready");
 
   const currentStepIndex =
     progress === "completed" ? steps.length : stepKeys.indexOf(progress) === -1 ? 0 : stepKeys.indexOf(progress);
@@ -371,7 +173,19 @@ function ReportCard({
         setReports(updatedReports);
       }
     }
-  }, [progress, lastProgress, reports, setReports, report.slug, tokenUsage, tokenUsageInput, tokenUsageOutput, estimatedCost, provider, model]);
+  }, [
+    progress,
+    lastProgress,
+    reports,
+    setReports,
+    report.slug,
+    tokenUsage,
+    tokenUsageInput,
+    tokenUsageOutput,
+    estimatedCost,
+    provider,
+    model,
+  ]);
   return (
     <LinkBox
       as={Card.Root}

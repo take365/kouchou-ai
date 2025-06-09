@@ -1,8 +1,9 @@
 "use client";
 
 import { Header } from "@/components/Header";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toaster } from "@/components/ui/toaster";
-import { Box, Button, Field, HStack, Heading, Presence, Tabs, VStack, useDisclosure } from "@chakra-ui/react";
+import { Box, Button, Field, HStack, Heading, Presence, Tabs, Text, VStack, useDisclosure } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createReport } from "./api/report";
@@ -45,6 +46,7 @@ export default function Page() {
   const router = useRouter();
   const { open, onToggle } = useDisclosure();
   const [loading, setLoading] = useState<boolean>(false);
+  const [autoDownloadOptions, setAutoDownloadOptions] = useState({ html: true, csv: true, json: false });
 
   // カスタムフックの使用
   const basicInfo = useBasicInfo();
@@ -63,7 +65,7 @@ export default function Page() {
   /**
    * レポート作成の送信
    */
-  const onSubmit = async () => {
+  const runCreateReport = async (): Promise<boolean> => {
     setLoading(true);
 
     // フォーム入力値のバリデーション
@@ -92,7 +94,7 @@ export default function Page() {
         description: validation.errorMessage,
       });
       setLoading(false);
-      return;
+      return false;
     }
 
     let comments: CsvData[] = [];
@@ -130,7 +132,7 @@ export default function Page() {
           );
           if (!confirmProceed) {
             setLoading(false);
-            return;
+            return false;
           }
         }
       } else if (inputData.inputType === "spreadsheet" && inputData.spreadsheetImported) {
@@ -164,7 +166,7 @@ export default function Page() {
         description: e as string,
       });
       setLoading(false);
-      return;
+      return false;
     }
 
     try {
@@ -205,18 +207,36 @@ export default function Page() {
         clusterLv2_min: clusterSettings.clusterLv2Min,
         clusterLv2_max: clusterSettings.clusterLv2Max,
       });
-
-      toaster.create({
-        duration: 5000,
-        type: "success",
-        title: "レポート作成を開始しました",
-      });
-
-      router.replace("/");
+      return true;
     } catch (e) {
       showErrorToast(toaster, e, "レポート作成に失敗しました");
+      return false;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onSubmitAndReturn = async () => {
+    const ok = await runCreateReport();
+    if (ok) router.replace("/");
+  };
+
+  const onSubmitAutoDownload = async () => {
+    if (!autoDownloadOptions.html && !autoDownloadOptions.csv && !autoDownloadOptions.json) {
+      toaster.create({
+        type: "error",
+        title: "出力形式の選択が必要です",
+        description: "少なくとも1つ選んでください。",
+      });
+      return;
+    }
+
+    const ok = await runCreateReport();
+    if (ok) {
+      const q = new URLSearchParams(
+        Object.fromEntries(Object.entries(autoDownloadOptions).map(([k, v]) => [k, String(v)])),
+      ).toString();
+      router.push(`/progress/${basicInfo.input}?${q}`);
     }
   };
 
@@ -239,7 +259,6 @@ export default function Page() {
             onQuestionChange={basicInfo.handleQuestionChange}
             onIntroChange={basicInfo.handleIntroChange}
           />
-
           {/* 入力データセクション */}
           <Field.Root>
             <Field.Label>入力データ</Field.Label>
@@ -291,14 +310,12 @@ export default function Page() {
               </Box>
             </Tabs.Root>
           </Field.Root>
-
           {/* AI詳細設定ボタン */}
           <HStack justify={"flex-end"} w={"full"}>
             <Button onClick={onToggle} variant={"outline"} w={"200px"}>
               AI詳細設定 (オプション)
             </Button>
           </HStack>
-
           {/* AI詳細設定セクション */}
           <Presence present={open} w={"full"}>
             <AISettingsSection
@@ -344,14 +361,48 @@ export default function Page() {
               setSkipOverview={aiSettings.setSkipOverview}
             />
           </Presence>
-
           {/* 警告メッセージ */}
           <WarningSection />
-
-          {/* 送信ボタン */}
-          <Button mt={10} className={"gradientBg shadow"} size={"2xl"} w={"300px"} onClick={onSubmit} loading={loading}>
+          <Button className="gradientBg shadow" size="2xl" w="300px" onClick={onSubmitAndReturn} loading={loading}>
             レポート作成を開始
           </Button>
+          <Button colorScheme="teal" size="2xl" w="300px" onClick={onSubmitAutoDownload} loading={loading}>
+            レポート作成(自動ダウンロード)
+          </Button>
+          <Box mt={4}>
+            <Text fontWeight="bold" mb={1}>
+              出力ファイル形式（自動ダウンロード）
+            </Text>
+
+            <Box display="flex" flexDirection="column" gap="8px">
+              <Checkbox
+                checked={autoDownloadOptions.html}
+                onCheckedChange={({ checked }) =>
+                  setAutoDownloadOptions((prev) => ({ ...prev, html: checked === true }))
+                }
+              >
+                シンプルなレポート（HTML）
+              </Checkbox>
+
+              <Checkbox
+                checked={autoDownloadOptions.csv}
+                onCheckedChange={({ checked }) =>
+                  setAutoDownloadOptions((prev) => ({ ...prev, csv: checked === true }))
+                }
+              >
+                CSV形式データ（CSV）
+              </Checkbox>
+
+              <Checkbox
+                checked={autoDownloadOptions.json}
+                onCheckedChange={({ checked }) =>
+                  setAutoDownloadOptions((prev) => ({ ...prev, json: checked === true }))
+                }
+              >
+                構造化分析データ（JSON）
+              </Checkbox>
+            </Box>
+          </Box>{" "}
         </VStack>
       </Box>
     </div>
