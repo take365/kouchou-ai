@@ -51,6 +51,7 @@ export default function Page() {
     progress === "completed" ? steps.length : stepKeys.indexOf(progress) === -1 ? 0 : stepKeys.indexOf(progress);
 
   const hasDownloaded = useRef(false);
+  const hasCompleted = useRef(false);
 
   useEffect(() => {
     if (progress === "completed" && !hasDownloaded.current) {
@@ -59,6 +60,7 @@ export default function Page() {
       router.replace(`/progress/${slug}`);
 
       const download = async () => {
+        hasCompleted.current = true;
         try {
           if (shouldDownloadHtml) {
             const res = await fetch(`${getApiBaseUrl()}/admin/reports/${slug}/simple-html`, {
@@ -130,7 +132,7 @@ export default function Page() {
       <Header />
       <Box mx="auto" maxW="600px">
         <Heading textAlign="center" my={10} fontSize="lg">
-          レポート生成中: {slug}
+          {hasCompleted.current ? "レポート生成完了" : "レポート生成中"}: {slug}
         </Heading>
         <Box mt={8}>
           <Steps.Root defaultStep={currentStepIndex} count={steps.length}>
