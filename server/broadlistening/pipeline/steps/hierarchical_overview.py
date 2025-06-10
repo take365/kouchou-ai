@@ -29,6 +29,12 @@ def hierarchical_overview(config):
     prompt = config["hierarchical_overview"]["prompt"]
     model = config["hierarchical_overview"]["model"]
 
+    api_key = None
+    if config["provider"] == "openai":
+        api_key = config.get("openai_api_key")
+    elif config["provider"] == "openrouter":
+        api_key = config.get("openrouter_api_key")
+
     # TODO: level1で固定にしているが、設定で変えられるようにする
     target_level = 1
     target_records = hierarchical_label_df[hierarchical_label_df["level"] == target_level]
@@ -48,6 +54,7 @@ def hierarchical_overview(config):
         model=model,
         provider=config["provider"],
         local_llm_address=config.get("local_llm_address"),
+        api_key=api_key,
         json_schema=OverviewResponse,
     )
 

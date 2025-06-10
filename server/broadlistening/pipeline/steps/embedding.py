@@ -12,6 +12,11 @@ def embedding(config):
     model = config["embedding"]["model"]
     is_embedded_at_local = config["is_embedded_at_local"]
     provider = config["provider"]
+    api_key = None
+    if provider == "openai":
+        api_key = config.get("openai_api_key")
+    elif provider == "openrouter":
+        api_key = config.get("openrouter_api_key")
     dataset = config["output_dir"]
     path = f"outputs/{dataset}/embeddings.pkl"
 
@@ -46,7 +51,7 @@ def embedding(config):
 
     embeddings = []
     for batch in tqdm(batches, desc="Embedding batches"):
-        embeds = request_to_embed(batch, model, is_embedded_at_local, provider)
+        embeds = request_to_embed(batch, model, is_embedded_at_local, provider, api_key=api_key)
         embeddings.extend(embeds)
 
     out_df = pd.DataFrame([{"arg-id": arg_ids[i], "embedding": embeddings[i]} for i in range(len(embeddings))])
