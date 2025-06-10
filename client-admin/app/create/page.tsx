@@ -201,6 +201,14 @@ export default function Page() {
         skip_initial_labelling: aiSettings.skipInitialLabelling,
         skip_merge_labelling: aiSettings.skipMergeLabelling,
         skip_overview: aiSettings.skipOverview,
+        openai_api_key:
+          process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && aiSettings.provider === "openai"
+            ? aiSettings.openaiApiKey
+            : undefined,
+        openrouter_api_key:
+          process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && aiSettings.provider === "openrouter"
+            ? aiSettings.openrouterApiKey
+            : undefined,
         auto_cluster_enabled: clusterSettings.autoClusterEnabled,
         clusterLv1_min: clusterSettings.clusterLv1Min,
         clusterLv1_max: clusterSettings.clusterLv1Max,
@@ -359,6 +367,10 @@ export default function Page() {
               setSkipMergeLabelling={aiSettings.setSkipMergeLabelling}
               skipOverview={aiSettings.skipOverview}
               setSkipOverview={aiSettings.setSkipOverview}
+              openaiApiKey={aiSettings.openaiApiKey}
+              setOpenaiApiKey={aiSettings.setOpenaiApiKey}
+              openrouterApiKey={aiSettings.openrouterApiKey}
+              setOpenrouterApiKey={aiSettings.setOpenrouterApiKey}
             />
           </Presence>
           {/* 警告メッセージ */}

@@ -24,6 +24,8 @@ export async function createReport({
   skip_initial_labelling,
   skip_merge_labelling,
   skip_overview,
+  openai_api_key,
+  openrouter_api_key,
   auto_cluster_enabled,
   clusterLv1_min,
   clusterLv1_max,
@@ -48,6 +50,8 @@ export async function createReport({
   skip_initial_labelling?: boolean;
   skip_merge_labelling?: boolean;
   skip_overview?: boolean;
+  openai_api_key?: string;
+  openrouter_api_key?: string;
   auto_cluster_enabled?: boolean;
   clusterLv1_min?: number;
   clusterLv1_max?: number;
@@ -80,6 +84,8 @@ export async function createReport({
         skip_initial_labelling,
         skip_merge_labelling,
         skip_overview,
+        openai_api_key,
+        openrouter_api_key,
         auto_cluster_enabled,
         clusterLv1_min,
         clusterLv1_max,

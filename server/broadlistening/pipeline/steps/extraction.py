@@ -36,6 +36,11 @@ def extraction(config):
     if "provider" not in config:
         raise RuntimeError("provider is not set")
     provider = config["provider"]
+    api_key = None
+    if provider == "openai":
+        api_key = config.get("openai_api_key")
+    elif provider == "openrouter":
+        api_key = config.get("openrouter_api_key")
 
     # カラム名だけを読み込み、必要なカラムが含まれているか確認する
     comments = pd.read_csv(f"inputs/{config['input']}.csv", nrows=0)
@@ -76,7 +81,14 @@ def extraction(config):
             batch = comment_ids[i : i + workers]
             batch_inputs = [comments.loc[id]["comment-body"] for id in batch]
             batch_results = extract_batch(
-                batch_inputs, prompt, model, workers, provider, config.get("local_llm_address"), config
+                batch_inputs,
+                prompt,
+                model,
+                workers,
+                provider,
+                config.get("local_llm_address"),
+                api_key,
+                config,
             )
 
             for comment_id, extracted_args in zip(batch, batch_results, strict=False):
@@ -119,10 +131,19 @@ def extraction(config):
 logging.basicConfig(level=logging.ERROR)
 
 
-def extract_batch(batch, prompt, model, workers, provider="openai", local_llm_address=None, config=None):
+def extract_batch(
+    batch,
+    prompt,
+    model,
+    workers,
+    provider="openai",
+    local_llm_address=None,
+    api_key=None,
+    config=None,
+):
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures_with_index = [
-            (i, executor.submit(extract_arguments, input, prompt, model, provider, local_llm_address))
+            (i, executor.submit(extract_arguments, input, prompt, model, provider, local_llm_address, api_key))
             for i, input in enumerate(batch)
         ]
 
@@ -163,7 +184,7 @@ def extract_batch(batch, prompt, model, workers, provider="openai", local_llm_ad
         return results
 
 
-def extract_arguments(input, prompt, model, provider="openai", local_llm_address=None):
+def extract_arguments(input, prompt, model, provider="openai", local_llm_address=None, api_key=None):
     messages = [
         {"role": "system", "content": prompt},
         {"role": "user", "content": input},
@@ -176,6 +197,7 @@ def extract_arguments(input, prompt, model, provider="openai", local_llm_address
             json_schema=ExtractionResponse,
             provider=provider,
             local_llm_address=local_llm_address,
+            api_key=api_key,
         )
         items = parse_extraction_response(response)
         items = list(filter(None, items))  # omit empty strings

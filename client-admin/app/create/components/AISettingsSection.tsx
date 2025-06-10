@@ -36,6 +36,10 @@ export function AISettingsSection({
   setSkipMergeLabelling,
   skipOverview,
   setSkipOverview,
+  openaiApiKey,
+  setOpenaiApiKey,
+  openrouterApiKey,
+  setOpenrouterApiKey,
 }: {
   provider: string;
   model: string;
@@ -79,6 +83,10 @@ export function AISettingsSection({
   setSkipMergeLabelling: (value: boolean) => void;
   skipOverview: boolean;
   setSkipOverview: (value: boolean) => void;
+  openaiApiKey?: string;
+  setOpenaiApiKey?: (value: string) => void;
+  openrouterApiKey?: string;
+  setOpenrouterApiKey?: (value: string) => void;
 }) {
   const modelOptions = getCurrentModels();
   // ✅ "使用しない" が選択されたらスキップ設定を全て true にする
@@ -152,6 +160,22 @@ export function AISettingsSection({
             OpenAI互換インターフェースで動作しているLLMサーバ（ollamaやLMStudio）のアドレスを指定してください。
             広聴AIのdockerでollamaサーバを起動している場合は ollama:11434で接続できます。
           </Field.HelperText>
+        </Field.Root>
+      )}
+      {process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && provider !== "none" && (
+        <Field.Root>
+          <Field.Label>
+            {provider === "openrouter" ? "OpenRouter API Key" : "OpenAI API Key"}
+          </Field.Label>
+          <Input
+            type="text"
+            value={provider === "openrouter" ? openrouterApiKey : openaiApiKey}
+            onChange={(e) =>
+              provider === "openrouter"
+                ? setOpenrouterApiKey?.(e.target.value)
+                : setOpenaiApiKey?.(e.target.value)
+            }
+          />
         </Field.Root>
       )}
       {provider !== "none" && (
