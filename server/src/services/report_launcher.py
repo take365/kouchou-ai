@@ -28,6 +28,8 @@ def _build_config(report_input: ReportInput) -> dict[str, Any]:
         "is_pubcom": report_input.is_pubcom,
         "is_embedded_at_local": report_input.is_embedded_at_local,
         "local_llm_address": report_input.local_llm_address,
+        "openai_api_key": report_input.openai_api_key,
+        "openrouter_api_key": report_input.openrouter_api_key,
         "extraction": {
             "prompt": report_input.prompt.extraction,
             "workers": report_input.workers,

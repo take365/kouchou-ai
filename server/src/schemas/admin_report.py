@@ -35,6 +35,8 @@ class ReportInput(SchemaBaseModel):
     is_embedded_at_local: bool = False  # エンベデッド処理をローカルで行うかどうか
     provider: str = "openai"  # LLMプロバイダー（openai, azure, openrouter, local）
     local_llm_address: str | None = None  # LocalLLM用アドレス（例: "127.0.0.1:1234"）
+    openai_api_key: str | None = None  # ワンタイム利用のOpenAI APIキー
+    openrouter_api_key: str | None = None  # ワンタイム利用のOpenRouter APIキー
 
     # NOTE: team-mirai feature
     enable_source_link: bool = False  # ソースリンク機能を有効にするかどうか。有効にする場合はtrue

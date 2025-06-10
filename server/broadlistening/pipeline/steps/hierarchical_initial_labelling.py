@@ -43,6 +43,12 @@ def hierarchical_initial_labelling(config: dict) -> None:
     model = config["hierarchical_initial_labelling"]["model"]
     workers = config["hierarchical_initial_labelling"]["workers"]
 
+    api_key = None
+    if config["provider"] == "openai":
+        api_key = config.get("openai_api_key")
+    elif config["provider"] == "openrouter":
+        api_key = config.get("openrouter_api_key")
+
     # トークン使用量を追跡するための変数を初期化
     config["total_token_usage"] = config.get("total_token_usage", 0)
 
@@ -54,7 +60,8 @@ def hierarchical_initial_labelling(config: dict) -> None:
         workers,
         config["provider"],
         config.get("local_llm_address"),
-        config,  # configを渡して、トークン使用量を累積できるようにする
+        config,
+        api_key,
     )
     print("start initial labelling")
     initial_clusters_argument_df = clusters_argument_df.merge(
@@ -81,6 +88,7 @@ def initial_labelling(
     provider: str = "openai",
     local_llm_address: str | None = None,
     config: dict | None = None,  # configを追加
+    api_key: str | None = None,
 ) -> pd.DataFrame:
     """各クラスタに対して初期ラベリングを実行する
 
@@ -109,7 +117,8 @@ def initial_labelling(
         model=model,
         provider=provider,
         local_llm_address=local_llm_address,
-        config=config,  # configを渡す
+        config=config,
+        api_key=api_key,
     )
     with ThreadPoolExecutor(max_workers=workers) as executor:
         results = list(executor.map(process_func, cluster_ids))
@@ -133,6 +142,7 @@ def process_initial_labelling(
     provider: str = "openai",
     local_llm_address: str | None = None,
     config: dict | None = None,  # configを追加
+    api_key: str | None = None,
 ) -> LabellingResult:
     """個別のクラスタに対してラベリングを実行する
 
@@ -172,6 +182,7 @@ def process_initial_labelling(
             provider=provider,
             json_schema=LabellingFromat,
             local_llm_address=local_llm_address,
+            api_key=api_key,
         )
 
         # トークン使用量を累積（configが渡されている場合）

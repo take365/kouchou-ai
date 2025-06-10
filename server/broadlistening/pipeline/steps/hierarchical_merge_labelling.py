@@ -57,6 +57,12 @@ def hierarchical_merge_labelling(config: dict) -> None:
     merge_path = f"outputs/{dataset}/hierarchical_merge_labels.csv"
     clusters_df = pd.read_csv(f"outputs/{dataset}/hierarchical_initial_labels.csv")
 
+    api_key = None
+    if config["provider"] == "openai":
+        api_key = config.get("openai_api_key")
+    elif config["provider"] == "openrouter":
+        api_key = config.get("openrouter_api_key")
+
     # 通常処理（既存）
     cluster_id_columns: list[str] = _filter_id_columns(clusters_df.columns)
     # ボトムクラスタのラベル・説明とクラスタid付きの各argumentを入力し、各階層のクラスタラベル・説明を生成し、argumentに付けたdfを作成
@@ -64,6 +70,7 @@ def hierarchical_merge_labelling(config: dict) -> None:
         clusters_df=clusters_df,
         cluster_id_columns=sorted(cluster_id_columns, reverse=True),
         config=config,
+        api_key=api_key,
     )
     # 上記のdfから各クラスタのlevel, id, label, description, valueを取得してdfを作成
     melted_df = melt_cluster_data(merge_result_df)
@@ -167,7 +174,12 @@ def melt_cluster_data(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(all_rows)
 
 
-def merge_labelling(clusters_df: pd.DataFrame, cluster_id_columns: list[str], config) -> pd.DataFrame:
+def merge_labelling(
+    clusters_df: pd.DataFrame,
+    cluster_id_columns: list[str],
+    config,
+    api_key: str | None = None,
+) -> pd.DataFrame:
     """階層的なクラスタのマージラベリングを実行する
 
     Args:
@@ -188,6 +200,7 @@ def merge_labelling(clusters_df: pd.DataFrame, cluster_id_columns: list[str], co
             current_columns=current_columns,
             previous_columns=previous_columns,
             config=config,
+            api_key=api_key,
         )
 
         current_cluster_ids = sorted(clusters_df[current_columns.id].unique())
@@ -217,6 +230,7 @@ def process_merge_labelling(
     current_columns: ClusterColumns,
     previous_columns: ClusterColumns,
     config,
+    api_key: str | None = None,
 ):
     """個別のクラスタに対してマージラベリングを実行する
 
@@ -287,6 +301,7 @@ def process_merge_labelling(
             json_schema=LabellingFromat,
             provider=config["provider"],
             local_llm_address=config.get("local_llm_address"),
+            api_key=api_key,
         )
 
         config["total_token_usage"] = config.get("total_token_usage", 0) + token_total

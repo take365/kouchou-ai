@@ -122,6 +122,9 @@ export function useAISettings() {
     getFromStorage<string>(STORAGE_KEYS.LOCAL_LLM_ADDRESS, DEFAULT_LOCAL_LLM_ADDRESS),
   );
 
+  const [openaiApiKey, setOpenaiApiKey] = useState<string>("");
+  const [openrouterApiKey, setOpenrouterApiKey] = useState<string>("");
+
   const [openRouterModels, setOpenRouterModels] = useState<ModelOption[]>([]);
   const [localLLMModels, setLocalLLMModels] = useState<ModelOption[]>([]);
   const [skipExtraction, setSkipExtraction] = useState(false);
@@ -384,5 +387,9 @@ export function useAISettings() {
     setSkipMergeLabelling,
     skipOverview,
     setSkipOverview,
+    openaiApiKey,
+    setOpenaiApiKey,
+    openrouterApiKey,
+    setOpenrouterApiKey,
   };
 }
