@@ -57,10 +57,9 @@ def extraction(config):
 
     if skip_extraction:
         print("⏩ 抽出ステップをスキップします（skip_extraction が有効）")
-        for _, comment_id in enumerate(comment_ids):
-            comment_body = comments.loc[comment_id]["comment-body"]
+        for comment_id, comment_body in comments["comment-body"].items():
             arg_id = f"A{comment_id}_0"
-            argument_map[comment_body] = {
+            argument_map[arg_id] = {
                 "arg-id": arg_id,
                 "argument": comment_body,
             }
