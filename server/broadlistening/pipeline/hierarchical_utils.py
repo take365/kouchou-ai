@@ -224,8 +224,14 @@ def update_status(config, updates):
         else:
             config[key] = value
     config["lock_until"] = (datetime.now() + timedelta(minutes=5)).isoformat()
+    save_config = config.copy()
+    key_fields = ["openai_api_key", "openrouter_api_key"]
+    for field in key_fields:
+        key_value = save_config.get(field)
+        if isinstance(key_value, str) and len(key_value) > 7:
+            save_config[field] = f"{key_value[:3]}...{key_value[-4:]}"
     with open(PIPELINE_DIR / f"outputs/{output_dir}/hierarchical_status.json", "w") as file:
-        json.dump(config, file, indent=2)
+        json.dump(save_config, file, indent=2)
 
 
 def update_progress(config, incr=None, total=None):
