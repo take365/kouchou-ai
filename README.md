@@ -6,6 +6,8 @@
 
 このプロジェクトは、[AI Objectives Institute](https://www.aiobjectivesinstitute.org/) が開発した [Talk to the City](https://github.com/AIObjectives/talk-to-the-city-reports)を参考に、日本の自治体や政治家の実務に合わせた機能改善を進めています。
 
+本ブランチ(dev)は公式リポジトリの非公式派生版です。
+
 - 機能例
   - 開発者以外でも扱いやすいような機能 (CSV Upload)
   - 濃いクラスタ抽出機能
@@ -237,3 +239,5 @@ make client-dev -j 3
 ## クレジット
 
 このプロジェクトは、[AI Objectives Institute](https://www.aiobjectivesinstitute.org/) が開発した [Talk to the City](https://github.com/AIObjectives/talk-to-the-city-reports)を参考に開発されており、ライセンスに基づいてソースコードを一部活用し、機能追加や改善を実施しています。ここに原作者の貢献に感謝の意を表します。
+
+本ブランチ(dev)は公式リポジトリの非公式派生版です。
