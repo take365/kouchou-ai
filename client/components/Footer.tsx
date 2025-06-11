@@ -103,7 +103,7 @@ export function Footer({ meta }: Props) {
             <Text>
               広聴AIは、デジタル民主主義2030プロジェクトから生まれたオープンソース（OSS）アプリケーションです。
               <Box as="br" display={{ base: "none", lg: "inline" }} />
-              本ページは、そのOSS成果物を活用して構築されています。
+              本ページは、そのOSS成果物を活用して構築されています。本ブランチ(dev)は公式リポジトリの非公式派生版です。
             </Text>
             <Flex gap="3">
               <Button asChild>

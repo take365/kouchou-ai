@@ -5,7 +5,7 @@ import ClientProvider from "./ClientProvider";
 import "./global.css";
 
 export const metadata: Metadata = {
-  title: "デジタル民主主義2030ブロードリスニング",
+  title: "分析レポート",
   robots: {
     index: false,
     follow: false,
@@ -28,7 +28,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           {children}
           <Toaster />
         </ClientProvider>
-        <footer>デジタル民主主義2030プロジェクト</footer>
       </body>
     </html>
   );
