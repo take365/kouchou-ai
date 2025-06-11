@@ -67,6 +67,8 @@ for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
             echo !KEY!=!VALUE!>>%ADMIN_ENV%
         ) else if /i "!KEY!"=="BASIC_AUTH_PASSWORD" (
             echo !KEY!=!VALUE!>>%ADMIN_ENV%
+        ) else if /i "!KEY!"=="NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE" (
+            echo !KEY!=!VALUE!>>%ADMIN_ENV%
         ) else if /i "!KEY!"=="NEXT_PUBLIC_ADMIN_GA_MEASUREMENT_ID" (
             echo !KEY!=!VALUE!>>%ADMIN_ENV%
         )
