@@ -162,22 +162,24 @@ export function AISettingsSection({
           </Field.HelperText>
         </Field.Root>
       )}
-      {process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && provider !== "none" && (
-        <Field.Root>
-          <Field.Label>
-            {provider === "openrouter" ? "OpenRouter API Key" : "OpenAI API Key"}
-          </Field.Label>
-          <Input
-            type="text"
-            value={provider === "openrouter" ? openrouterApiKey : openaiApiKey}
-            onChange={(e) =>
-              provider === "openrouter"
-                ? setOpenrouterApiKey?.(e.target.value)
-                : setOpenaiApiKey?.(e.target.value)
-            }
-          />
-        </Field.Root>
-      )}
+      {process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" &&
+        (provider === "openrouter" || provider === "openai") && (
+          <Field.Root>
+            <Field.Label>{provider === "openrouter" ? "OpenRouter API Key" : "OpenAI API Key"}</Field.Label>
+            <Input
+              type="password"
+              value={provider === "openrouter" ? openrouterApiKey : openaiApiKey}
+              onChange={(e) =>
+                provider === "openrouter" ? setOpenrouterApiKey?.(e.target.value) : setOpenaiApiKey?.(e.target.value)
+              }
+            />
+            <Field.HelperText color="red.500" fontWeight="bold">
+              【重要】APIキーが漏洩すると不正利用される可能性があります。
+              この入力欄は試験的に提供されており、安全性が保証されていません。
+              必ず一時利用のキーを使い、使用後は削除してください。
+            </Field.HelperText>
+          </Field.Root>
+        )}
       {provider !== "none" && (
         <Field.Root>
           <Field.Label>並列実行数</Field.Label>
@@ -248,7 +250,7 @@ export function AISettingsSection({
           ソースリンク機能を有効にする
         </Checkbox>
         <Field.HelperText>
-         ONにした場合は、CSVのurlカラムの情報を使って、レポートの散布図上でデータ点をクリックすると元のソースにアクセスできます。
+          ONにした場合は、CSVのurlカラムの情報を使って、レポートの散布図上でデータ点をクリックすると元のソースにアクセスできます。
         </Field.HelperText>
       </Field.Root>
       {/* 抽出プロンプト */}
