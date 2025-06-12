@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import useReportProgressPoll from "./hooks/useReportProgressPoll";
 
 // ステップの定義
@@ -826,7 +827,18 @@ const EmptyState = () => {
 };
 
 export default function Page() {
+  const router = useRouter();
   const [reports, setReports] = useState<Report[]>();
+
+  useEffect(() => {
+    if (process.env.ENVIRONMENT === "instant") {
+      router.replace("/create");
+    }
+  }, [router]);
+
+  if (process.env.ENVIRONMENT === "instant") {
+    return null;
+  }
 
   useEffect(() => {
     (async () => {

@@ -202,11 +202,11 @@ export default function Page() {
         skip_merge_labelling: aiSettings.skipMergeLabelling,
         skip_overview: aiSettings.skipOverview,
         openai_api_key:
-          process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && aiSettings.provider === "openai"
+          process.env.ENVIRONMENT === "instant" && aiSettings.provider === "openai"
             ? aiSettings.openaiApiKey
             : undefined,
         openrouter_api_key:
-          process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && aiSettings.provider === "openrouter"
+          process.env.ENVIRONMENT === "instant" && aiSettings.provider === "openrouter"
             ? aiSettings.openrouterApiKey
             : undefined,
         auto_cluster_enabled: clusterSettings.autoClusterEnabled,
@@ -375,9 +375,11 @@ export default function Page() {
           </Presence>
           {/* 警告メッセージ */}
           <WarningSection />
-          <Button className="gradientBg shadow" size="2xl" w="300px" onClick={onSubmitAndReturn} loading={loading}>
-            レポート作成を開始
-          </Button>
+          {process.env.ENVIRONMENT !== "instant" && (
+            <Button className="gradientBg shadow" size="2xl" w="300px" onClick={onSubmitAndReturn} loading={loading}>
+              レポート作成を開始
+            </Button>
+          )}
           <Button colorScheme="teal" size="2xl" w="300px" onClick={onSubmitAutoDownload} loading={loading}>
             レポート作成(自動ダウンロード)
           </Button>
