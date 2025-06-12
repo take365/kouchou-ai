@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-Environment = Literal["development", "production"]
+Environment = Literal["development", "production", "instant"]
 StorageType = Literal["local", "azure_blob"]
 
 

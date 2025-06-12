@@ -39,6 +39,7 @@ import {
   ExternalLinkIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useReportProgressPoll from "./hooks/useReportProgressPoll";
 
@@ -826,7 +827,18 @@ const EmptyState = () => {
 };
 
 export default function Page() {
+  const router = useRouter();
   const [reports, setReports] = useState<Report[]>();
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_ENVIRONMENT === "instant") {
+      router.replace("/create");
+    }
+  }, [router]);
+
+  if (process.env.NEXT_PUBLIC_ENVIRONMENT === "instant") {
+    return null;
+  }
 
   useEffect(() => {
     (async () => {

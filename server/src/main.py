@@ -16,7 +16,7 @@ slogger = setup_logger()
 
 def get_app():
     print(settings.ENVIRONMENT)
-    if settings.ENVIRONMENT == "production":
+    if settings.ENVIRONMENT in ("production", "instant"):
         return FastAPI(
             title="kouchou-ai API",
             default_response_class=ORJSONResponse,
