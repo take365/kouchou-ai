@@ -49,5 +49,44 @@ htmlcov/
 
 
 broadlistening/pipeline/inputs/*
-broadlistening/pipeline/configs/*
-broadlistening/pipeline/outputs/*
+# Python関連
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.log
+*.db
+
+# 仮想環境
+.venv/
+env/
+.conda/
+
+# 開発/エディタ設定
+.vscode/
+.idea/
+*.swp
+
+# テスト/ドキュメント
+tests/
+test/
+*.ipynb
+
+# モデル/データキャッシュ
+output/
+.cache/
+.dvc/
+wandb/
+
+# Web系
+node_modules/
+dist/
+build/
+*.tgz
+*.zip
+*.tar.gz
+
+# 環境ファイル
+.env
+.env.*
