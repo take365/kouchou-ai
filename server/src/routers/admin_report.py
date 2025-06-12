@@ -108,6 +108,8 @@ async def get_current_step(slug: str) -> dict:
         # error キーが存在する場合はエラーとみなす
         if "error" in status:
             response["current_step"] = "error"
+            response["error_message"] = status.get("error")
+            response["error_stack_trace"] = status.get("error_stack_trace")
             return response
 
         # 全体のステータスが "completed" なら、current_step も "completed" とする

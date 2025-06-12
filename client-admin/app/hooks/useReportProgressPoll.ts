@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 export function useReportProgressPoll(slug: string, shouldSubscribe: boolean, autoReload = true) {
   const [progress, setProgress] = useState<string>("loading");
   const [errorStep, setErrorStep] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorStackTrace, setErrorStackTrace] = useState<string | null>(null);
   const [lastValidStep, setLastValidStep] = useState<string>("loading");
   const [isPolling, setIsPolling] = useState<boolean>(true);
   const [tokenUsage, setTokenUsage] = useState<number>(0);
@@ -121,6 +123,8 @@ export function useReportProgressPoll(slug: string, shouldSubscribe: boolean, au
 
           if (data.current_step === "error") {
             setErrorStep(data.error_step || lastValidStep);
+            setErrorMessage(data.error_message || null);
+            setErrorStackTrace(data.error_stack_trace || null);
             setProgress("error");
             setIsPolling(false);
             return;
@@ -128,6 +132,8 @@ export function useReportProgressPoll(slug: string, shouldSubscribe: boolean, au
 
           setLastValidStep(data.current_step);
           setErrorStep(null);
+          setErrorMessage(null);
+          setErrorStackTrace(null);
           setProgress(data.current_step);
 
           if (data.current_step === "completed") {
@@ -176,7 +182,18 @@ export function useReportProgressPoll(slug: string, shouldSubscribe: boolean, au
     }
   }, [progress, hasReloaded, autoReload]);
 
-  return { progress, errorStep, tokenUsage, tokenUsageInput, tokenUsageOutput, estimatedCost, provider, model };
+  return {
+    progress,
+    errorStep,
+    errorMessage,
+    errorStackTrace,
+    tokenUsage,
+    tokenUsageInput,
+    tokenUsageOutput,
+    estimatedCost,
+    provider,
+    model,
+  };
 }
 
 export default useReportProgressPoll;
