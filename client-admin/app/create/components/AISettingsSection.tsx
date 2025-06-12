@@ -127,10 +127,10 @@ export function AISettingsSection({
         <Field.Label>AIプロバイダー</Field.Label>
         <NativeSelect.Root w={"40%"}>
           <NativeSelect.Field value={provider} onChange={onProviderChange}>
-            <option value={"openai"}>OpenAI</option>
-            <option value={"azure"}>Azure</option>
-            <option value={"openrouter"}>OpenRouter</option>
-            <option value={"local"}>LocalLLM</option>
+            <option value="openai">OpenAI</option>
+            {process.env.NEXT_PUBLIC_ENVIRONMENT !== "instant" && <option value="azure">Azure</option>}
+            <option value="openrouter">OpenRouter</option>
+            {process.env.NEXT_PUBLIC_ENVIRONMENT !== "instant" && <option value="local">LocalLLM</option>}
             <option value="none">使用しない</option>
           </NativeSelect.Field>
           <NativeSelect.Indicator />

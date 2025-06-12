@@ -35,8 +35,8 @@ const OPENAI_MODELS: ModelOption[] = [
 
 // OpenRouterで利用可能なモデル
 const OPENROUTER_MODELS: ModelOption[] = [
-  { value: "openai/gpt-4o-2024-08-06", label: "GPT-4o (OpenRouter)" },
   { value: "openai/gpt-4o-mini-2024-07-18", label: "GPT-4o mini (OpenRouter)" },
+  { value: "openai/gpt-4o-2024-08-06", label: "GPT-4o (OpenRouter)" },
   { value: "google/gemini-2.5-pro-preview", label: "Gemini 2.5 Pro" },
 ];
 

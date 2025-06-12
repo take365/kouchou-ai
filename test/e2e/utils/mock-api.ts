@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 /**
  * APIエンドポイントをモックする
  */
-export async function mockApiEndpoint(page: Page, url: string, response: any, status = 200) {
+export async function mockApiEndpoint(page: Page, url: string, response: unknown, status = 200) {
   await page.route(url, async (route) => {
     await route.fulfill({
       status,
