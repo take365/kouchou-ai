@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Analysis } from "@/components/report/Analysis";
 import { BackButton } from "@/components/report/BackButton";
 import { ClientContainer } from "@/components/report/ClientContainer";
+import { FileUploadFallback } from "@/components/report/FileUploadFallback";
 import { Overview } from "@/components/report/Overview";
 import { Reporter } from "@/components/reporter/Reporter";
 import type { Meta, Report, Result } from "@/type";
@@ -110,7 +111,10 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
-  const meta: Meta = await metaResponse.json();
+  const meta: Meta | undefined = metaResponse.ok ? await metaResponse.json() : undefined;
+  if (!resultResponse.ok) {
+    return <FileUploadFallback meta={meta} />;
+  }
   const result: Result = await resultResponse.json();
 
   return (
@@ -122,11 +126,13 @@ export default async function Page({ params }: PageProps) {
         <Analysis result={result} />
         <BackButton />
         <Separator my={12} maxW={"750px"} mx={"auto"} />
-        <Box maxW={"750px"} mx={"auto"} mb={24}>
-          <Reporter meta={meta} />
-        </Box>
+        {meta && (
+          <Box maxW={"750px"} mx={"auto"} mb={24}>
+            <Reporter meta={meta} />
+          </Box>
+        )}
       </div>
-      <Footer meta={meta} />
+      {meta && <Footer meta={meta} />}
     </>
   );
 }
