@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>{{ result.config.question }}</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            color: #2577B1;
+        }
+
+        .intro,
+        .overview {
+            margin-bottom: 1em;
+            white-space: pre-wrap;
+        }
+
+        .group {
+            border: 1px solid #ccc;
+            margin: 5px 0;
+            padding: 5px 10px;
+        }
+
+        .group-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f7f7f7;
+            padding: 5px;
+        }
+
+        .group-header .toggle {
+            font-weight: bold;
+            margin-right: 10px;
+            user-select: none;
+        }
+
+        .group-header .title {
+            flex: 1;
+        }
+
+        .group-header .stats {
+            font-size: 0.9em;
+            color: #555;
+            margin-left: 10px;
+        }
+
+        .summary {
+            font-size: 0.9em;
+            color: #333;
+            margin-left: 20px;
+        }
+
+        .group-children,
+        .arguments {
+            margin-left: 20px;
+            border-left: 1px dashed #ccc;
+            padding-left: 10px;
+        }
+
+        .argument {
+            margin: 5px 0;
+            padding: 3px;
+            background-color: #eef;
+        }
+
+        #toggleAll,
+        #toggleLabels {
+            margin: 10px 5px 15px 0;
+            background-color: #3182ce;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        #toggleAll:hover,
+        #toggleLabels:hover {
+            background-color: #2a69ac;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>{{ result.config.question }}</h1>
+    <div class="overview">{{ hierarchical_overview }}</div>
+
+    <div class="chart-container" id="scatterChart"></div>
+
+    <h2>意見グループ一覧</h2>
+    <button id="toggleAll" onclick="toggleAllGroups()">すべて展開</button>
+    <button id="toggleLabels" onclick="toggleLabels()">ラベル非表示</button>
+    <div id="groupContainer">
+        {% macro render_group(group, parent_color='') %}
+        {%- if group.level == 1 and color_map[group.id] is defined -%}
+        {%- set my_color = color_map[group.id] -%}
+        {%- else -%}
+        {%- set my_color = parent_color -%}
+        {%- endif %}
+
+        <div class="group" data-group-id="{{ group.id }}">
+            <div class="group-header" onclick="toggleThisGroup(this)" style="color: {{ my_color }};">
+                <span class="toggle">[+]</span>
+                <span class="title">{{ group.label }}</span>
+                <span class="stats">{{ group.value }}件</span>
+            </div>
+            <div class="summary">{{ group.takeaway }}</div>
+
+            {% if group.children and group.children | length > 0 %}
+            <div class="group-children" style="display: none;">
+                {% for child in group.children %}
+                {{ render_group(child, my_color) }}
+                {% endfor %}
+            </div>
+            {% else %}
+            {% set group_args = result.arguments | selectattr("cluster_ids", "search", group.id) | list %}
+            {% if group_args | length > 0 %}
+            <div class="arguments" style="display: none;">
+                {% for arg in group_args %}
+                <div class="argument">{{ arg.argument }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endmacro %}
+
+        {% for group in cluster_tree %}
+        {{ render_group(group) }}
+        {% endfor %}
+
+        <div class="intro">{{ result.config.intro }}</div>
+    </div>
+
+    <script>
+        const result = {{ result | tojson(indent = 2) }};
+        const color_map = {{ color_map | tojson(indent = 2) }};
+        const clusters = result.clusters.filter(c => c.level === 1);
+        const args = result.arguments;
+
+        let labelVisible = true;
+
+        const clusterLabels = clusters.map((cluster, idx) => {
+            const clusterArgs = args.filter(arg => arg.cluster_ids.includes(cluster.id));
+            if (clusterArgs.length === 0) return null;
+            const centerX = clusterArgs.map(arg => arg.x).reduce((a, b) => a + b, 0) / clusterArgs.length;
+            const centerY = clusterArgs.map(arg => arg.y).reduce((a, b) => a + b, 0) / clusterArgs.length;
+            const bgColor = color_map[cluster.id] || `hsl(${(idx * 40) % 360},70%,60%)`;
+            return {
+                x: centerX,
+                y: centerY,
+                text: cluster.label,
+                showarrow: false,
+                font: { size: 13, color: "white" },
+                align: "center",
+                bgcolor: bgColor,
+                opacity: 0.7,
+                borderpad: 4
+            };
+        }).filter(Boolean);
+
+        function toggleLabels() {
+            labelVisible = !labelVisible;
+            const newAnnotations = clusterLabels.map(label => ({ ...label, visible: labelVisible }));
+            Plotly.relayout("scatterChart", { annotations: newAnnotations });
+            const btn = document.getElementById("toggleLabels");
+            btn.textContent = labelVisible ? "ラベル非表示" : "ラベル表示";
+        }
+
+        const scatterData = clusters.map((cluster, idx) => {
+            const clusterArgs = args.filter(arg => arg.cluster_ids.includes(cluster.id));
+            const x = clusterArgs.map(arg => arg.x);
+            const y = clusterArgs.map(arg => arg.y);
+            const color = color_map[cluster.id] || `hsl(${(idx * 40) % 360},70%,60%)`;
+            return {
+                x: x,
+                y: y,
+                mode: "markers",
+                type: "scatter",
+                name: cluster.label,
+                marker: { color: color, size: 7 },
+                text: clusterArgs.map(arg => `<b>${cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br>")}`),
+                hoverinfo: "text"
+            };
+        });
+
+        Plotly.newPlot("scatterChart", scatterData, {
+            margin: { l: 20, r: 20, t: 20, b: 20 },
+            xaxis: { showticklabels: false, zeroline: false },
+            yaxis: { showticklabels: false, zeroline: false },
+            hovermode: "closest",
+            showlegend: false,
+            annotations: clusterLabels
+        }, { responsive: true });
+
+        function toggleThisGroup(headerElem) {
+            const groupElem = headerElem.parentElement;
+            const toggleElem = headerElem.querySelector(".toggle");
+            const childContainer = groupElem.querySelector(".group-children") || groupElem.querySelector(".arguments");
+            if (childContainer) {
+                if (childContainer.style.display === "none") {
+                    childContainer.style.display = "block";
+                    toggleElem.textContent = "[-]";
+                } else {
+                    childContainer.style.display = "none";
+                    toggleElem.textContent = "[+]";
+                }
+            }
+        }
+
+        function toggleAllGroups() {
+            const btn = document.getElementById("toggleAll");
+            const groups = document.querySelectorAll("#groupContainer .group");
+            const expand = btn.textContent === "すべて展開";
+            groups.forEach(group => {
+                const header = group.querySelector(".group-header");
+                const toggleElem = header.querySelector(".toggle");
+                const childContainer = group.querySelector(".group-children") || group.querySelector(".arguments");
+                if (childContainer) {
+                    childContainer.style.display = expand ? "block" : "none";
+                    toggleElem.textContent = expand ? "[-]" : "[+]";
+                }
+            });
+            btn.textContent = expand ? "すべて閉じる" : "すべて展開";
+        }
+    </script>
+</body>
+
+</html>

@@ -1,5 +1,12 @@
+.env.azure.generated
+.env.azure
 .env
 .idea
 .next
 .DS_Store
+.azure/generated
 node_modules
+docker-compose.override.y*ml
+out
+lefthook-local.yml
+dist

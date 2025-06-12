@@ -1,63 +1,130 @@
-import {Header} from '@/components/Header'
-import {Footer} from '@/components/Footer'
-import {Meta} from '@/type'
-import {About} from '@/components/report/About'
-import {Box, Card, Heading, HStack, Text} from '@chakra-ui/react'
-import Link from 'next/link'
-import {CircleCheckIcon, CircleFadingArrowUpIcon} from 'lucide-react'
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { Reporter } from "@/components/reporter/Reporter";
+import type { Meta, Report } from "@/type";
+import { Box, Card, HStack, Heading, Image, Text, VStack } from "@chakra-ui/react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getApiBaseUrl } from "./utils/api";
+
+export const revalidate = 300;
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`);
+    const meta: Meta = await metaResponse.json();
+
+    const { getBasePath, getRelativeUrl } = await import("@/app/utils/image-src");
+
+    const metadata: Metadata = {
+      title: `${meta.reporter} - 広聴AI(デジタル民主主義2030ブロードリスニング)`,
+      description: meta.message || "",
+      openGraph: {
+        images: [getRelativeUrl("/meta/ogp.png")],
+      },
+    };
+
+    // 静的エクスポート時はmetadataBaseを設定しない（相対パスを使用するため）
+    if (process.env.NEXT_PUBLIC_OUTPUT_MODE !== "export") {
+      // 開発環境やSSR時のみmetadataBaseを設定
+      const defaultHost = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+      metadata.metadataBase = new URL(defaultHost + getBasePath());
+    }
+
+    return metadata;
+  } catch (_e) {
+    console.error("Failed to fetch metadata for generateMetadata:", _e);
+    return {
+      title: "広聴AI(デジタル民主主義2030ブロードリスニング)",
+    };
+  }
+}
 
 export default async function Page() {
-  const metaResponse = await fetch(process.env.NEXT_PUBLIC_API_BASEPATH + '/meta/metadata.json')
-  const reportsResponse = await fetch(process.env.NEXT_PUBLIC_API_BASEPATH + '/reports')
-  if (!metaResponse.ok || !reportsResponse.ok) {
-    return <p>エラー：サーバーサイドレンダリングに失敗しました</p>
+  try {
+    const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`);
+    const reportsResponse = await fetch(`${getApiBaseUrl()}/reports`, {
+      headers: {
+        "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
+        "Content-Type": "application/json",
+      },
+    });
+    const meta: Meta = await metaResponse.json();
+    const reports: Report[] = await reportsResponse.json();
+    return (
+      <>
+        <div className={"container"}>
+          <Header />
+          <Box mx={"auto"} maxW={"1024px"} mb={10}>
+            <Box mb="12">
+              <Reporter meta={meta} />
+            </Box>
+            <Heading textAlign={"left"} fontSize={"xl"} mb={8}>
+              レポート一覧
+            </Heading>
+            {reports.length === 0 ? (
+              <EmptyState />
+            ) : (
+              reports.map((report) => (
+                <Link key={report.slug} href={`/${report.slug}`}>
+                  <Card.Root
+                    size="md"
+                    key={report.slug}
+                    mb={4}
+                    borderLeftWidth={10}
+                    borderLeftColor={meta.brandColor || "#2577b1"}
+                    cursor={"pointer"}
+                    className={"shadow"}
+                  >
+                    <Card.Body>
+                      <HStack>
+                        <Box>
+                          <Card.Title>
+                            <Text fontSize={"lg"} color={"#2577b1"} mb={1}>
+                              {report.title}
+                            </Text>
+                          </Card.Title>
+                          {report.createdAt && (
+                            <Text fontSize={"xs"} color={"gray.500"} mb={1}>
+                              作成日時: {new Date(report.createdAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+                            </Text>
+                          )}
+                          <Card.Description>{report.description || ""}</Card.Description>
+                        </Box>
+                      </HStack>
+                    </Card.Body>
+                  </Card.Root>
+                </Link>
+              ))
+            )}
+          </Box>
+        </div>
+        <Footer meta={meta} />
+      </>
+    );
+  } catch (_e) {
+    return (
+      <p>
+        エラー：データの取得に失敗しました
+        <br />
+        Error: fetch failed to {process.env.NEXT_PUBLIC_API_BASEPATH}.
+      </p>
+    );
   }
-  const meta: Meta = await metaResponse.json()
-  const reports: { slug: string, status: string, title: string }[] = await reportsResponse.json()
-  return (
-    <>
-      <div className={'container'}>
-        <Header meta={meta} />
-        <About meta={meta} />
-        <Box mx={'auto'} maxW={'750px'} mb={5}>
-          <Heading textAlign={'center'} fontSize={'xl'} mb={5}>Reports</Heading>
-          {reports.map(report => (
-            <Link
-              key={report.slug}
-              href={report.status === 'ready' ? `/${report.slug}` : '/'}
-            >
-              <Card.Root
-                size="md"
-                key={report.slug}
-                mb={2}
-                borderLeftWidth={10}
-                borderLeftColor={report.status === 'ready' ? 'green' : 'gray'}
-                cursor={report.status === 'ready' ? 'pointer' : 'progress'}
-              >
-                <Card.Body>
-                  <HStack>
-                    <Box mr={3} color={report.status === 'ready' ? 'green' : 'gray'}>
-                      {report.status === 'ready' ? (<CircleCheckIcon size={30} />) : (<CircleFadingArrowUpIcon size={30} />)}
-                    </Box>
-                    <Box>
-                      <Card.Title>
-                        <Text
-                          fontSize={'md'}
-                          color={report.status === 'ready' ? '#2577b1' : 'gray'}
-                        >{report.title}</Text>
-                      </Card.Title>
-                      <Card.Description>
-                        /{report.slug}
-                      </Card.Description>
-                    </Box>
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
-            </Link>
-          ))}
-        </Box>
-      </div>
-      <Footer meta={meta} />
-    </>
-  )
 }
+
+const EmptyState = () => {
+  return (
+    <VStack mt={8} mb={12} gap={0} lineHeight={2}>
+      <Text fontSize="18px" fontWeight="bold">
+        レポートが0件です
+      </Text>
+      <Text fontSize="14px" textAlign={{ md: "center" }} mt={5}>
+        レポート作成が完了し公開されると、ここに一覧が表示されます。
+        <Box as="br" display={{ base: "none", md: "block" }} />
+        レポートが公開されるまでしばらくお待ちください。
+      </Text>
+      <Image src="images/report-empty.png" mt={8} />
+    </VStack>
+  );
+};
