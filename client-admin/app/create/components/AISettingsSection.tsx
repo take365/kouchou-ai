@@ -162,7 +162,7 @@ export function AISettingsSection({
           </Field.HelperText>
         </Field.Root>
       )}
-      {process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" &&
+      {process.env.ENVIRONMENT === "instant" &&
         (provider === "openrouter" || provider === "openai") && (
           <Field.Root>
             <Field.Label>{provider === "openrouter" ? "OpenRouter API Key" : "OpenAI API Key"}</Field.Label>

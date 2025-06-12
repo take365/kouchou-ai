@@ -7,11 +7,18 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
-docker compose up -d
+ENV_FILE_ENV=$(grep -E '^ENVIRONMENT=' .env | cut -d= -f2)
+if [ "$ENV_FILE_ENV" = "instant" ]; then
+  docker compose up -d api client-admin
+else
+  docker compose up -d
+fi
 
 echo ""
 echo "Kouchou-AI is now running!"
 echo "You can access the following URLs in your browser:"
-echo "  http://localhost:3000 - Report Viewer"
+if [ "$ENV_FILE_ENV" != "instant" ]; then
+  echo "  http://localhost:3000 - Report Viewer"
+fi
 echo "  http://localhost:4000 - Admin Panel"
 echo ""

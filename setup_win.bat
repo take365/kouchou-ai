@@ -48,12 +48,19 @@ echo NEXT_PUBLIC_SITE_URL=http://localhost:3000 >> .env
 
 REM Start the environment
 echo Starting Docker environment...
-docker compose up -d --build
+for /f "tokens=2 delims==" %%A in ('findstr ^ENVIRONMENT= .env') do set ENVIRONMENT=%%A
+if /I "%ENVIRONMENT%"=="instant" (
+  docker compose up -d --build api client-admin
+) else (
+  docker compose up -d --build
+)
 
 echo.
 echo Setup completed!
 echo You can now access the following URLs in your browser:
-echo   http://localhost:3000 - Report Viewer
+if /I "%ENVIRONMENT%" NEQ "instant" (
+  echo   http://localhost:3000 - Report Viewer
+)
 echo   http://localhost:4000 - Admin Panel
 echo.
 pause

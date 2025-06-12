@@ -25,12 +25,19 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 EOL
 
 echo "Starting Docker environment..."
-docker compose up -d --build
+ENV_FILE_ENV=$(grep -E '^ENVIRONMENT=' .env | cut -d= -f2)
+if [ "$ENV_FILE_ENV" = "instant" ]; then
+  docker compose up -d --build api client-admin
+else
+  docker compose up -d --build
+fi
 
 echo ""
 echo "Setup completed!"
 echo "You can now access the following URLs in your browser:"
-echo "  http://localhost:3000 - Report Viewer"
+if [ "$ENV_FILE_ENV" != "instant" ]; then
+  echo "  http://localhost:3000 - Report Viewer"
+fi
 echo "  http://localhost:4000 - Admin Panel"
 echo ""
 read -p "Press Enter to continue..."
