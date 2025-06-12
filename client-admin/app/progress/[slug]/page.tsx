@@ -41,7 +41,16 @@ export default function Page() {
   const shouldDownloadCsv = searchParams.get("csv") !== "false";
   const shouldDownloadJson = searchParams.get("json") === "true";
 
-  const { progress, tokenUsageInput, tokenUsageOutput, estimatedCost, provider, model } = useReportProgressPoll(
+  const {
+    progress,
+    errorMessage,
+    errorStackTrace,
+    tokenUsageInput,
+    tokenUsageOutput,
+    estimatedCost,
+    provider,
+    model,
+  } = useReportProgressPoll(
     slug,
     true,
     false,
@@ -171,9 +180,19 @@ export default function Page() {
           </HStack>
         )}
         {progress === "error" && (
-          <Text color="red.600" mt={4}>
-            エラーが発生しました。再度お試しください。
-          </Text>
+          <Box mt={4} color="red.600">
+            <Text fontWeight="bold">エラーが発生しました</Text>
+            {errorMessage && (
+              <Text whiteSpace="pre-wrap" fontSize="sm" mt={2}>
+                {errorMessage}
+              </Text>
+            )}
+            {errorStackTrace && (
+              <Box as="pre" whiteSpace="pre-wrap" fontSize="xs" mt={2} overflowX="auto">
+                {errorStackTrace}
+              </Box>
+            )}
+          </Box>
         )}
         <Text mt={10} fontSize="xs" color="gray.500">
           生成されたレポートの内容は必ずご自身で確認してください。
