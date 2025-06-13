@@ -1,7 +1,8 @@
 import json
 import logging
+import secrets
 import threading
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import requests
 
@@ -17,6 +18,7 @@ logger = logging.getLogger("uvicorn")
 STATE_FILE = settings.DATA_DIR / "report_status.json"
 _lock = threading.RLock()
 _report_status = {}
+_reservations: dict[str, str] = {}
 
 
 # FIXME: report_status.jsonのフォーマット変更に対応するためのコード。広聴AIをver3.0にした段階で削除する。
@@ -233,3 +235,62 @@ def update_report_config(slug: str, updated_config: ReportConfigUpdate) -> dict:
 
     invalidate_report_cache(slug)
     return _report_status[slug]
+
+
+def generate_session_token(slug: str, ttl_hours: int = 24) -> str:
+    token = secrets.token_urlsafe(16)
+    expiry = datetime.now(UTC) + timedelta(hours=ttl_hours)
+    with _lock:
+        if slug not in _report_status:
+            raise ValueError(f"slug {slug} not found in report status")
+        _report_status[slug]["session_token"] = token
+        _report_status[slug]["session_expiry"] = expiry.isoformat()
+        save_status()
+    return token
+
+
+def validate_session_token(token: str) -> bool:
+    with _lock:
+        for status in _report_status.values():
+            if status.get("session_token") == token:
+                expiry_str = status.get("session_expiry")
+                if expiry_str:
+                    try:
+                        expiry = datetime.fromisoformat(expiry_str)
+                        if expiry > datetime.now(UTC):
+                            return True
+                    except ValueError:
+                        return False
+        return False
+
+
+def invalidate_session_token(slug: str) -> None:
+    with _lock:
+        if slug in _report_status:
+            _report_status[slug].pop("session_token", None)
+            _report_status[slug].pop("session_expiry", None)
+            save_status()
+
+
+def count_processing_jobs() -> int:
+    with _lock:
+        return sum(
+            1
+            for r in _report_status.values()
+            if r.get("status") == ReportStatus.PROCESSING.value
+        )
+
+
+def create_reservation() -> str:
+    token = secrets.token_urlsafe(8)
+    _reservations[token] = "reserved"
+    return token
+
+
+def release_reservation(token: str) -> None:
+    _reservations.pop(token, None)
+
+
+def count_reservations() -> int:
+    return len(_reservations)
+

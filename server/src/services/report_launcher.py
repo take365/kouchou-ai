@@ -8,7 +8,12 @@ import pandas as pd
 
 from src.config import settings
 from src.schemas.admin_report import ReportInput
-from src.services.report_status import add_new_report_to_status, set_status, update_token_usage
+from src.services.report_status import (
+    add_new_report_to_status,
+    invalidate_session_token,
+    set_status,
+    update_token_usage,
+)
 from src.services.report_sync import ReportSyncService
 from src.utils.logger import setup_logger
 
@@ -149,6 +154,7 @@ def _monitor_process(process: subprocess.Popen, slug: str) -> None:
             logger.error(f"Error updating token usage for {slug}: {e}")
 
         set_status(slug, "ready")
+        invalidate_session_token(slug)
 
         logger.info(f"Syncing files for {slug} to storage")
         report_sync_service = ReportSyncService()
@@ -163,6 +169,7 @@ def _monitor_process(process: subprocess.Popen, slug: str) -> None:
 
     else:
         set_status(slug, "error")
+        invalidate_session_token(slug)
 
 
 def launch_report_generation(report_input: ReportInput) -> None:
