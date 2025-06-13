@@ -39,22 +39,10 @@ export default function Page() {
   // デフォルト値：html=true, csv=true, json=false
   const shouldDownloadHtml = searchParams.get("html") !== "false";
   const shouldDownloadCsv = searchParams.get("csv") !== "false";
-  const shouldDownloadJson = searchParams.get("json") === "true";
+  const shouldDownloadJson = searchParams.get("json") !== "false";
 
-  const {
-    progress,
-    errorMessage,
-    errorStackTrace,
-    tokenUsageInput,
-    tokenUsageOutput,
-    estimatedCost,
-    provider,
-    model,
-  } = useReportProgressPoll(
-    slug,
-    true,
-    false,
-  );
+  const { progress, errorMessage, errorStackTrace, tokenUsageInput, tokenUsageOutput, estimatedCost, provider, model } =
+    useReportProgressPoll(slug, true, false);
 
   const currentStepIndex =
     progress === "completed" ? steps.length : stepKeys.indexOf(progress) === -1 ? 0 : stepKeys.indexOf(progress);
@@ -177,8 +165,14 @@ export default function Page() {
         {progress === "completed" && (
           <HStack justify="center" mt={10}>
             <Button onClick={() => router.push("/create")}>新しいレポートを作成する</Button>
+            <a href={`${process.env.NEXT_PUBLIC_CLIENT_BASEPATH}/`} target="_blank" rel="noopener noreferrer">
+              <Button colorScheme="teal" variant="outline">
+                高機能レポートビュー
+              </Button>
+            </a>
           </HStack>
         )}
+
         {progress === "error" && (
           <Box mt={4} color="red.600">
             <Text fontWeight="bold">エラーが発生しました</Text>
@@ -194,9 +188,6 @@ export default function Page() {
             )}
           </Box>
         )}
-        <Text mt={10} fontSize="xs" color="gray.500">
-          生成されたレポートの内容は必ずご自身で確認してください。
-        </Text>
       </Box>
     </div>
   );

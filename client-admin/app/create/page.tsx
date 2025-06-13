@@ -3,7 +3,19 @@
 import { Header } from "@/components/Header";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toaster } from "@/components/ui/toaster";
-import { Box, Button, Field, HStack, Heading, Presence, Tabs, Text, VStack, useDisclosure } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Field,
+  Flex,
+  HStack,
+  Heading,
+  Presence,
+  Tabs,
+  Text,
+  VStack,
+  useDisclosure,
+} from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createReport } from "./api/report";
@@ -46,7 +58,7 @@ export default function Page() {
   const router = useRouter();
   const { open, onToggle } = useDisclosure();
   const [loading, setLoading] = useState<boolean>(false);
-  const [autoDownloadOptions, setAutoDownloadOptions] = useState({ html: true, csv: true, json: false });
+  const [autoDownloadOptions, setAutoDownloadOptions] = useState({ html: true, csv: true, json: true });
 
   // カスタムフックの使用
   const basicInfo = useBasicInfo();
@@ -253,9 +265,14 @@ export default function Page() {
     <div className={"container"}>
       <Header />
       <Box mx={"auto"} maxW={"800px"}>
-        <Heading textAlign={"center"} my={10}>
-          新しいレポートを作成する
-        </Heading>
+        <Flex justify="space-between" align="center" my={10}>
+          <Heading size="lg">新しいレポートを作成する</Heading>
+          <a href={`${process.env.NEXT_PUBLIC_CLIENT_BASEPATH}/`} target="_blank" rel="noopener noreferrer">
+            <Button colorScheme="teal" variant="outline">
+              データファイルからレポートを表示する
+            </Button>
+          </a>
+        </Flex>
         <VStack gap={5}>
           {/* 基本情報セクション */}
           <BasicInfoSection
@@ -395,7 +412,7 @@ export default function Page() {
                   setAutoDownloadOptions((prev) => ({ ...prev, html: checked === true }))
                 }
               >
-                シンプルなレポート（HTML）
+                {`シンプルなレポート（kouchou_${basicInfo.input || "<report-id>"}.html）`}
               </Checkbox>
 
               <Checkbox
@@ -404,7 +421,7 @@ export default function Page() {
                   setAutoDownloadOptions((prev) => ({ ...prev, csv: checked === true }))
                 }
               >
-                CSV形式データ（CSV）
+                {`CSV形式データ（kouchou_${basicInfo.input || "<report-id>"}.csv）`}
               </Checkbox>
 
               <Checkbox
@@ -413,7 +430,7 @@ export default function Page() {
                   setAutoDownloadOptions((prev) => ({ ...prev, json: checked === true }))
                 }
               >
-                構造化分析データ（JSON）
+                {`構造化分析データ（kouchou_${basicInfo.input || "<report-id>"}.json）`}
               </Checkbox>
             </Box>
           </Box>{" "}

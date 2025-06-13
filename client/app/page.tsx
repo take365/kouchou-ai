@@ -1,12 +1,12 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { FileUploadFallback } from "@/components/report/FileUploadFallback";
 import { Reporter } from "@/components/reporter/Reporter";
 import type { Meta, Report } from "@/type";
 import { Box, Card, HStack, Heading, Image, Text, VStack } from "@chakra-ui/react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getApiBaseUrl } from "./utils/api";
-
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -42,6 +42,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page() {
   try {
+    if (process.env.NEXT_PUBLIC_ENVIRONMENT === "instant") {
+      return <FileUploadFallback />;
+    }
     const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`);
     const reportsResponse = await fetch(`${getApiBaseUrl()}/reports`, {
       headers: {
