@@ -97,10 +97,13 @@ export type Config = {
     source_code: string; // 実行するスクリプトのコード
     prompt: string; // LLM に渡すプロンプト
     model: string; // 使用するモデル名
+    skip?: boolean; // スキップ
   };
   hierarchical_clustering: {
     cluster_nums: number[]; // クラスタ数のリスト
     source_code: string; // クラスタリングのスクリプト
+    auto_cluster_enabled?: boolean; // クラスタ数を自動で決定
+    auto_cluster_result?: AutoClusterResult; // クラスタ数とスコアの履歴
   };
   embedding: {
     model: string; // 使用する埋め込みモデル
@@ -111,17 +114,20 @@ export type Config = {
     source_code: string; // 初期ラベリングスクリプト
     prompt: string; // LLM のプロンプト
     model: string; // 使用するモデル
+    skip?: boolean; // スキップ
   };
   hierarchical_merge_labelling: {
     workers: number; // 並列処理数
     source_code: string; // マージラベリングスクリプト
     prompt: string; // LLM のプロンプト
     model: string; // 使用するモデル
+    skip?: boolean; // スキップ
   };
   hierarchical_overview: {
     source_code: string; // 概要生成スクリプト
     prompt: string; // LLM のプロンプト
     model: string; // 使用するモデル
+    skip?: boolean; // スキップ
   };
   hierarchical_aggregation: {
     hidden_properties: Record<string, string[]>; // 非表示プロパティ情報
@@ -160,4 +166,15 @@ export type Config = {
         current_job: string; // 現在のジョブ名
         current_job_started: string; // 現在のジョブの開始時刻
       };
+};
+export type AutoClusterResult = {
+  results: {
+    label: string; // 例: "lv1-3" や "lv2-10"
+    score: number; // シルエットスコアなどの評価値
+  }[];
+  best: {
+    lv1: { k: number }; // 第一階層の最適クラスタ数
+    lv2: { k: number }; // 第二階層の最適クラスタ数
+  };
+  duration_sec: number; // 計算にかかった時間（秒）
 };

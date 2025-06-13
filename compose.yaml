@@ -44,14 +44,14 @@ services:
     networks:
       - app-network
 
-    client:
-      <<: *client-common
-      build:
-        context: ./client
-        dockerfile: Dockerfile
-        <<: *client-build-args
-      ports:
-        - "3000:3000"
+  client:
+    <<: *client-common
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      <<: *client-build-args
+    ports:
+      - "3000:3000"
 
   client-static-build:
     <<: *client-common
