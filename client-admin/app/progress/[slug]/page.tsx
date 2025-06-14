@@ -167,7 +167,7 @@ export default function Page() {
             <Button onClick={() => router.push("/create")}>新しいレポートを作成する</Button>
             <a href={`${process.env.NEXT_PUBLIC_CLIENT_BASEPATH}/`} target="_blank" rel="noopener noreferrer">
               <Button colorScheme="teal" variant="outline">
-                高機能レポートビュー
+                データファイルからレポートを表示する
               </Button>
             </a>
           </HStack>
