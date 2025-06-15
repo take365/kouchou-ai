@@ -7,12 +7,16 @@ set REGISTRY=kouchouai2.sakuracr.jp
 docker login %REGISTRY%
 
 :: API
-docker build -t %REGISTRY%/kouchou-ai-api:latest ./server
+docker tag kouchou-ai-api:latest %REGISTRY%/kouchou-ai-api:latest
 docker push %REGISTRY%/kouchou-ai-api:latest
 
 :: Client-admin
-docker build -t %REGISTRY%/kouchou-ai-client-admin:latest ./client-admin
+docker tag kouchou-ai-client-admin:latest %REGISTRY%/kouchou-ai-client-admin:latest
 docker push %REGISTRY%/kouchou-ai-client-admin:latest
+
+:: Client
+docker tag kouchou-ai-client:latest %REGISTRY%/kouchou-ai-client:latest
+docker push %REGISTRY%/kouchou-ai-client:latest
 
 echo Done!
 pause
