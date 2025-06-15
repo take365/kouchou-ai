@@ -54,7 +54,9 @@ for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
             echo !KEY!=!VALUE!>>%CLIENT_ENV%
         ) else if /i "!KEY!"=="NEXT_PUBLIC_GA_MEASUREMENT_ID" (
             echo !KEY!=!VALUE!>>%CLIENT_ENV%
-        )
+        ) else if /i "!KEY!"=="ENVIRONMENT" (
+			echo NEXT_PUBLIC_ENVIRONMENT=!VALUE!>>%CLIENT_ENV%
+		)
 
         rem Client-admin
         if /i "!KEY!"=="NEXT_PUBLIC_CLIENT_BASEPATH" (
@@ -72,7 +74,6 @@ for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
         ) else if /i "!KEY!"=="NEXT_PUBLIC_ADMIN_GA_MEASUREMENT_ID" (
             echo !KEY!=!VALUE!>>%ADMIN_ENV%
         ) else if /i "!KEY!"=="ENVIRONMENT" (
-			echo !KEY!=!VALUE!>>%SERVER_ENV%
 			echo NEXT_PUBLIC_ENVIRONMENT=!VALUE!>>%ADMIN_ENV%
 		)
     )

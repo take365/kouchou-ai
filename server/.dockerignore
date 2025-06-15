@@ -37,6 +37,8 @@ htmlcov/
 
 # 環境変数（本番環境では別途設定）
 .env
+.venv/
+venv/
 
 # エディタ/IDE
 .idea/
