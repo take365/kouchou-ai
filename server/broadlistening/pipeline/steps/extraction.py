@@ -15,8 +15,15 @@ from utils import update_progress
 COMMA_AND_SPACE_AND_RIGHT_BRACKET = re.compile(r",\s*(\])")
 
 
+class ExtractedOpinion(BaseModel):
+    opinion: str = Field(..., description="抽出した意見")
+    summary: str = Field(..., description="抽出した意見の要約")
+
+
 class ExtractionResponse(BaseModel):
-    extractedOpinionList: list[str] = Field(..., description="抽出した意見のリスト")
+    extractedOpinionList: list[ExtractedOpinion] = Field(
+        ..., description="抽出した意見と要約のリスト"
+    )
 
 
 def _validate_property_columns(property_columns: list[str], comments: pd.DataFrame) -> None:
@@ -64,9 +71,10 @@ def extraction(config):
         print("⏩ 抽出ステップをスキップします（skip_extraction が有効）")
         for comment_id, comment_body in comments["comment-body"].items():
             arg_id = f"A{comment_id}_0"
-            argument_map[arg_id] = {
+            argument_map[comment_body] = {
                 "arg-id": arg_id,
                 "argument": comment_body,
+                "summary": comment_body[:10],
             }
             relation_rows.append(
                 {
@@ -91,16 +99,19 @@ def extraction(config):
             )
 
             for comment_id, extracted_args in zip(batch, batch_results, strict=False):
-                for j, arg in enumerate(extracted_args):
-                    if arg not in argument_map:
+                for j, item in enumerate(extracted_args):
+                    opinion = item.get("opinion") if isinstance(item, dict) else str(item)
+                    summary = item.get("summary") if isinstance(item, dict) else ""
+                    if opinion not in argument_map:
                         # argumentテーブルに追加
                         arg_id = f"A{comment_id}_{j}"
-                        argument_map[arg] = {
+                        argument_map[opinion] = {
                             "arg-id": arg_id,
-                            "argument": arg,
+                            "argument": opinion,
+                            "summary": summary,
                         }
                     else:
-                        arg_id = argument_map[arg]["arg-id"]
+                        arg_id = argument_map[opinion]["arg-id"]
 
                     # relationテーブルにcommentとargの関係を追加
                     relation_row = {

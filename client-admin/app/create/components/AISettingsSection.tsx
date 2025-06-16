@@ -36,6 +36,8 @@ export function AISettingsSection({
   setSkipMergeLabelling,
   skipOverview,
   setSkipOverview,
+  useSummary,
+  onUseSummaryChange,
   openaiApiKey,
   setOpenaiApiKey,
   openrouterApiKey,
@@ -83,6 +85,8 @@ export function AISettingsSection({
   setSkipMergeLabelling: (value: boolean) => void;
   skipOverview: boolean;
   setSkipOverview: (value: boolean) => void;
+  useSummary: boolean;
+  onUseSummaryChange: (value: boolean) => void;
   openaiApiKey?: string;
   setOpenaiApiKey?: (value: string) => void;
   openrouterApiKey?: string;
@@ -264,6 +268,14 @@ export function AISettingsSection({
             pr={2}
           >
             スキップ
+          </Checkbox>
+          <Checkbox
+            checked={useSummary}
+            onCheckedChange={({ checked }) => onUseSummaryChange(checked === true)}
+            disabled={skipExtraction}
+            ml={2}
+          >
+            埋め込み処理の対象に要約を使う
           </Checkbox>
         </Flex>
         <Textarea

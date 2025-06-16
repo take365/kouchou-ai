@@ -44,6 +44,7 @@ class ReportInput(SchemaBaseModel):
     skip_initial_labelling: bool = False  # 初期ラベリングスキップ
     skip_merge_labelling: bool = False  # 統合ラベリングスキップ
     skip_overview: bool = False  # 要約プロンプトスキップ
+    use_summary: bool = True  # 要約を埋め込みに利用するかどうか
 
     auto_cluster_enabled: bool = False  # 自動クラスタ数設定
     clusterLv1_min: int | None = None  # 自動クラスタ範囲（上位層最小）

@@ -213,6 +213,7 @@ export default function Page() {
         skip_initial_labelling: aiSettings.skipInitialLabelling,
         skip_merge_labelling: aiSettings.skipMergeLabelling,
         skip_overview: aiSettings.skipOverview,
+        use_summary: aiSettings.useSummary,
         openai_api_key:
           process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && aiSettings.provider === "openai"
             ? aiSettings.openaiApiKey
@@ -384,6 +385,8 @@ export default function Page() {
               setSkipMergeLabelling={aiSettings.setSkipMergeLabelling}
               skipOverview={aiSettings.skipOverview}
               setSkipOverview={aiSettings.setSkipOverview}
+              useSummary={aiSettings.useSummary}
+              onUseSummaryChange={aiSettings.setUseSummary}
               openaiApiKey={aiSettings.openaiApiKey}
               setOpenaiApiKey={aiSettings.setOpenaiApiKey}
               openrouterApiKey={aiSettings.openrouterApiKey}

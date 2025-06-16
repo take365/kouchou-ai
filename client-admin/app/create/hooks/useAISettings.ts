@@ -22,6 +22,7 @@ const STORAGE_KEYS = {
   LOCAL_LLM_ADDRESS: `${STORAGE_KEY_PREFIX}local_llm_address`,
   IS_EMBEDDED_AT_LOCAL: `${STORAGE_KEY_PREFIX}is_embedded_at_local`,
   ENABLE_SOURCE_LINK: `${STORAGE_KEY_PREFIX}enable_source_link`,
+  USE_SUMMARY: `${STORAGE_KEY_PREFIX}use_summary`,
 };
 
 // LocalLLMのデフォルトアドレスを定数化
@@ -117,6 +118,9 @@ export function useAISettings() {
   const [enableSourceLink, setEnableSourceLink] = useState<boolean>(() =>
     getFromStorage<boolean>(STORAGE_KEYS.ENABLE_SOURCE_LINK, false),
   );
+  const [useSummary, setUseSummary] = useState<boolean>(() =>
+    getFromStorage<boolean>(STORAGE_KEYS.USE_SUMMARY, true),
+  );
 
   const [localLLMAddress, setLocalLLMAddress] = useState<string>(() =>
     getFromStorage<string>(STORAGE_KEYS.LOCAL_LLM_ADDRESS, DEFAULT_LOCAL_LLM_ADDRESS),
@@ -131,6 +135,13 @@ export function useAISettings() {
   const [skipInitialLabelling, setSkipInitialLabelling] = useState(false);
   const [skipMergeLabelling, setSkipMergeLabelling] = useState(false);
   const [skipOverview, setSkipOverview] = useState(false);
+
+  // skipExtraction が有効になったら useSummary を強制OFF
+  useEffect(() => {
+    if (skipExtraction) {
+      setUseSummary(false);
+    }
+  }, [skipExtraction]);
 
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.PROVIDER, provider);
@@ -155,6 +166,10 @@ export function useAISettings() {
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.ENABLE_SOURCE_LINK, enableSourceLink);
   }, [enableSourceLink]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.USE_SUMMARY, useSummary);
+  }, [useSummary]);
 
   useEffect(() => {
     if (provider === "openrouter") {
@@ -387,6 +402,8 @@ export function useAISettings() {
     setSkipMergeLabelling,
     skipOverview,
     setSkipOverview,
+    useSummary,
+    setUseSummary,
     openaiApiKey,
     setOpenaiApiKey,
     openrouterApiKey,

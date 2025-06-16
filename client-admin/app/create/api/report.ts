@@ -24,6 +24,7 @@ export async function createReport({
   skip_initial_labelling,
   skip_merge_labelling,
   skip_overview,
+  use_summary,
   openai_api_key,
   openrouter_api_key,
   auto_cluster_enabled,
@@ -50,6 +51,7 @@ export async function createReport({
   skip_initial_labelling?: boolean;
   skip_merge_labelling?: boolean;
   skip_overview?: boolean;
+  use_summary?: boolean;
   openai_api_key?: string;
   openrouter_api_key?: string;
   auto_cluster_enabled?: boolean;
@@ -59,7 +61,7 @@ export async function createReport({
   clusterLv2_max?: number;
 }): Promise<void> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASEPATH}/admin/reports`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASEPATH}/admin/reports`, {
       method: "POST",
       headers: {
         "x-api-key": process.env.NEXT_PUBLIC_ADMIN_API_KEY || "",
@@ -84,6 +86,7 @@ export async function createReport({
         skip_initial_labelling,
         skip_merge_labelling,
         skip_overview,
+        use_summary,
         openai_api_key,
         openrouter_api_key,
         auto_cluster_enabled,
