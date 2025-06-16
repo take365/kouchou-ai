@@ -91,12 +91,14 @@ export function AISettingsSection({
   const modelOptions = getCurrentModels();
   // ✅ "使用しない" が選択されたらスキップ設定を全て true にする
   useEffect(() => {
+    if (provider === "none" || provider === "openrouter") {
+      onEmbeddedAtLocalChange(true);
+    }
     if (provider === "none") {
       setSkipExtraction(true);
       setSkipInitialLabelling(true);
       setSkipMergeLabelling(true);
       setSkipOverview(true);
-      onEmbeddedAtLocalChange(true);
     }
   }, [
     provider,
@@ -230,9 +232,9 @@ export function AISettingsSection({
           埋め込み処理をサーバ内で行うことで、APIの利用料金を削減します。
           精度に関しては未検証であり、OpenAIを使った場合と大きく異なる結果になる可能性があります。
           {isEmbeddedAtLocalDisabled?.() ||
-            (provider === "none" && (
+            (provider !== "openai" && (
               <span style={{ color: "red" }}>
-                ※ LocalLLMプロバイダーまたは「使用しない」を選択している場合、この設定は強制的にONになります
+                ※ OpenAIプロバイダー以外を選択している場合、この設定は強制的にONになります
               </span>
             ))}
         </Field.HelperText>

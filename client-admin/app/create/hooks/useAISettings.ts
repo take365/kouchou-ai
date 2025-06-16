@@ -107,7 +107,10 @@ function saveToStorage<T>(key: string, value: T): void {
  * AIモデル設定を管理するカスタムフック
  */
 export function useAISettings() {
-  const [provider, setProvider] = useState<Provider>(() => getFromStorage<Provider>(STORAGE_KEYS.PROVIDER, "openai"));
+  const defaultProvider = process.env.NEXT_PUBLIC_ENVIRONMENT === "instant" ? "none" : "openai";
+  const [provider, setProvider] = useState<string>(() =>
+    getFromStorage<string>(STORAGE_KEYS.PROVIDER, defaultProvider),
+  );
   const [model, setModel] = useState<string>(() => getFromStorage<string>(STORAGE_KEYS.MODEL, "gpt-4o-mini"));
   const [workers, setWorkers] = useState<number>(() => getFromStorage<number>(STORAGE_KEYS.WORKERS, 30));
   const [isPubcomMode, setIsPubcomMode] = useState<boolean>(true);
