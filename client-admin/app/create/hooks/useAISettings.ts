@@ -118,9 +118,7 @@ export function useAISettings() {
   const [enableSourceLink, setEnableSourceLink] = useState<boolean>(() =>
     getFromStorage<boolean>(STORAGE_KEYS.ENABLE_SOURCE_LINK, false),
   );
-  const [useSummary, setUseSummary] = useState<boolean>(() =>
-    getFromStorage<boolean>(STORAGE_KEYS.USE_SUMMARY, true),
-  );
+  const [useSummary, setUseSummary] = useState<boolean>(() => getFromStorage<boolean>(STORAGE_KEYS.USE_SUMMARY, true));
 
   const [localLLMAddress, setLocalLLMAddress] = useState<string>(() =>
     getFromStorage<string>(STORAGE_KEYS.LOCAL_LLM_ADDRESS, DEFAULT_LOCAL_LLM_ADDRESS),

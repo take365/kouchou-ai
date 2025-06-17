@@ -69,9 +69,25 @@
         }
 
         .argument {
+            display: flex;
+            align-items: flex-start;
             margin: 5px 0;
             padding: 3px;
             background-color: #eef;
+        }
+
+        .argument-summary {
+            width: 140px;
+            font-size: 0.9em;
+            font-weight: bold;
+            white-space: nowrap;
+            margin-right: 10px;
+        }
+
+        .argument-body {
+            flex: 1;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         #toggleAll,
@@ -129,7 +145,10 @@
             {% if group_args | length > 0 %}
             <div class="arguments" style="display: none;">
                 {% for arg in group_args %}
-                <div class="argument">{{ arg.argument }}</div>
+                <div class="argument">
+                    <div class="argument-summary">{{ arg.summary }}</div>
+                    <div class="argument-body">{{ arg.argument }}</div>
+                </div>
                 {% endfor %}
             </div>
             {% endif %}

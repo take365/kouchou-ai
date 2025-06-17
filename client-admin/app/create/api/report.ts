@@ -61,7 +61,7 @@ export async function createReport({
   clusterLv2_max?: number;
 }): Promise<void> {
   try {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASEPATH}/admin/reports`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASEPATH}/admin/reports`, {
       method: "POST",
       headers: {
         "x-api-key": process.env.NEXT_PUBLIC_ADMIN_API_KEY || "",

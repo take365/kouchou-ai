@@ -23,7 +23,8 @@
         "steps": ["extraction"]
       },
       "options": {
-        "model": "text-embedding-3-small"
+        "model": "text-embedding-3-small",
+        "use_summary": false  
       }
     },
     {
@@ -34,7 +35,8 @@
         "steps": ["embedding"]
       },
       "options": {
-        "clusters": 8
+        "clusters": 8,
+        "use_summary": false  
       }
     },
     {

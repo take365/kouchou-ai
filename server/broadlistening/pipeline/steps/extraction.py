@@ -21,9 +21,7 @@ class ExtractedOpinion(BaseModel):
 
 
 class ExtractionResponse(BaseModel):
-    extractedOpinionList: list[ExtractedOpinion] = Field(
-        ..., description="抽出した意見と要約のリスト"
-    )
+    extractedOpinionList: list[ExtractedOpinion] = Field(..., description="抽出した意見と要約のリスト")
 
 
 def _validate_property_columns(property_columns: list[str], comments: pd.DataFrame) -> None:
@@ -50,12 +48,21 @@ def extraction(config):
         api_key = config.get("openrouter_api_key")
 
     # カラム名だけを読み込み、必要なカラムが含まれているか確認する
-    comments = pd.read_csv(f"inputs/{config['input']}.csv", nrows=0)
-    _validate_property_columns(property_columns, comments)
+    tmp_df = pd.read_csv(f"inputs/{config['input']}.csv", nrows=0)
+    available_columns = tmp_df.columns.tolist()
+
+    # 必要カラムを確認
+    property_columns = config["extraction"]["properties"]
+    _validate_property_columns(property_columns, tmp_df)
+
+    # 読み込みたいカラム候補
+    desired_columns = ["comment-id", "comment-body", "summary"] + property_columns
+
+    # 実際に存在するカラムだけに絞る
+    usecols = [col for col in desired_columns if col in available_columns]
+
     # エラーが出なかった場合、すべての行を読み込む
-    comments = pd.read_csv(
-        f"inputs/{config['input']}.csv", usecols=["comment-id", "comment-body"] + config["extraction"]["properties"]
-    )
+    comments = pd.read_csv(f"inputs/{config['input']}.csv", usecols=usecols)
 
     # ✅ 空コメントを除外（この段階ではまだ index 化してないのでOK）
     comments = comments[comments["comment-body"].notna() & (comments["comment-body"].str.strip() != "")]
@@ -71,10 +78,25 @@ def extraction(config):
         print("⏩ 抽出ステップをスキップします（skip_extraction が有効）")
         for comment_id, comment_body in comments["comment-body"].items():
             arg_id = f"A{comment_id}_0"
+
+            summary = "-"
+            if "summary" in comments.columns:
+                # locで該当行を取得（複数行該当の可能性に備える）
+                rows = comments.loc[comment_id, "summary"]
+                if isinstance(rows, pd.Series):
+                    # 複数あれば最初の一つを使う
+                    first_value = rows.iloc[0]
+                else:
+                    # 単一値ならそのまま
+                    first_value = rows
+
+                if pd.notna(first_value):
+                    summary = str(first_value)
+
             argument_map[comment_body] = {
                 "arg-id": arg_id,
                 "argument": comment_body,
-                "summary": comment_body[:10],
+                "summary": summary,
             }
             relation_rows.append(
                 {

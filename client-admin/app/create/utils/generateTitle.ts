@@ -27,19 +27,31 @@ export function generateDefaultQuestionTitle({
     ? `自動 (${clusterSettings.clusterLv1Max}+${clusterSettings.clusterLv2Max})`
     : `手動 (${clusterSettings.clusterLv1}+${clusterSettings.clusterLv2})`;
 
-  const skips = [
-    aiSettings.skipExtraction && "抽出スキップ",
-    aiSettings.skipInitialLabelling && "初期ラベルスキップ",
-    aiSettings.skipMergeLabelling && "統合ラベルスキップ",
-    aiSettings.skipOverview && "要約スキップ",
-  ]
-    .filter(Boolean)
-    .join(", ");
+  // スキップフラグの短縮表示
+  const skipFlags = [
+    aiSettings.skipExtraction && "抽出",
+    aiSettings.skipInitialLabelling && "初期",
+    aiSettings.skipMergeLabelling && "統合",
+    aiSettings.skipOverview && "要約",
+  ].filter(Boolean) as string[];
+
+  // 埋め込みに要約を利用する場合のラベル
+  const classification = aiSettings.useSummary ? "要旨で分類" : "";
+
+  // スキップと分類をまとめる
+  const suffixParts: string[] = [];
+  if (skipFlags.length > 0) {
+    suffixParts.push(`スキップ（${skipFlags.join(",")}）`);
+  }
+  if (classification) {
+    suffixParts.push(classification);
+  }
+  const suffix = suffixParts.length > 0 ? `｜${suffixParts.join(", ")}` : "";
 
   const extra =
     aiSettings.provider !== "none"
       ? ` (${aiSettings.workers}並列${aiSettings.isEmbeddedAtLocal ? "｜ローカル埋込" : ""})`
       : "";
 
-  return `[${source}] ${col}列｜${clustering}｜${providerLabel}${extra}${skips ? `｜${skips}` : ""}`;
+  return `[${source}] ${col}列｜${clustering}｜${providerLabel}${extra}${suffix}`;
 }
