@@ -35,13 +35,19 @@ export function generateDefaultQuestionTitle({
     aiSettings.skipOverview && "要約",
   ].filter(Boolean) as string[];
 
+  // ソースリンク機能が有効な場合のラベル
+  const linkLabel = aiSettings.enableSourceLink ? "リンク付" : "";
+
   // 埋め込みに要約を利用する場合のラベル
   const classification = aiSettings.useSummary ? "要旨で分類" : "";
 
-  // スキップと分類をまとめる
+  // スキップ、リンク、分類をまとめる
   const suffixParts: string[] = [];
   if (skipFlags.length > 0) {
     suffixParts.push(`スキップ（${skipFlags.join(",")}）`);
+  }
+  if (linkLabel) {
+    suffixParts.push(linkLabel);
   }
   if (classification) {
     suffixParts.push(classification);
