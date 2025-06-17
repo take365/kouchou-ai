@@ -29,7 +29,9 @@ export function WarningSection({ commentCount, useRandomSample, setUseRandomSamp
           <Alert.Title>入力データが {commentCount} 件あります。1000件を超える場合、処理が失敗する可能性があります。</Alert.Title>
           <RadioCardRoot
             value={useRandomSample ? "sample" : "all"}
-            onValueChange={(val) => setUseRandomSample(val === "sample")}
+            onValueChange={(details) =>
+              setUseRandomSample(details.value === "sample")
+            }
           >
             <RadioCardLabel>処理方法を選択</RadioCardLabel>
             <RadioCardItem value="sample" label="ランダムに1000件を抜粋して処理" />
