@@ -28,6 +28,10 @@ export function useInputData(onDataLoaded: (commentCount: number) => void) {
   const [selectedCommentColumn, setSelectedCommentColumn] = useState<string>("");
   const [selectedAttributeColumns, setSelectedAttributeColumns] = useState<string[]>([]);
 
+  // 追加: コメント件数とサンプリング設定
+  const [commentCount, setCommentCount] = useState<number>(0);
+  const [useRandomSample, setUseRandomSample] = useState<boolean>(false);
+
   /**
    * 最適なカラムを選択する関数
    */
@@ -43,6 +47,8 @@ export function useInputData(onDataLoaded: (commentCount: number) => void) {
         setSelectedCommentColumn(bestColumn);
       }
 
+      setCommentCount(data.length);
+      setUseRandomSample(data.length > 1000);
       onDataLoaded(data.length);
     },
     [onDataLoaded],
@@ -67,6 +73,8 @@ export function useInputData(onDataLoaded: (commentCount: number) => void) {
         setCsvColumns([]);
         setSelectedCommentColumn("");
         setSelectedAttributeColumns([]);
+        setCommentCount(0);
+        setUseRandomSample(false);
       }
     },
     [selectBestColumn],
@@ -142,6 +150,8 @@ export function useInputData(onDataLoaded: (commentCount: number) => void) {
       setSelectedCommentColumn("");
       setSelectedAttributeColumns([]);
       setCsvColumns([]);
+      setCommentCount(0);
+      setUseRandomSample(false);
     }
   }, [importedId]);
 
@@ -167,6 +177,8 @@ export function useInputData(onDataLoaded: (commentCount: number) => void) {
         setCsvColumns([]);
         setSelectedCommentColumn("");
         setSelectedAttributeColumns([]);
+        setCommentCount(0);
+        setUseRandomSample(false);
       }
     },
     [csv, spreadsheetData, selectBestColumn],
@@ -189,6 +201,9 @@ export function useInputData(onDataLoaded: (commentCount: number) => void) {
     selectedCommentColumn,
     selectedAttributeColumns,
     canImport,
+    commentCount,
+    useRandomSample,
+    setUseRandomSample,
     setInputType: handleInputTypeChange,
     setCsv: handleCsvChange,
     setSpreadsheetUrl,

@@ -31,6 +31,7 @@ import { useInputData } from "./hooks/useInputData";
 import { usePromptSettings } from "./hooks/usePromptSettings";
 import { type CsvData, parseCsv } from "./parseCsv";
 import { showErrorToast } from "./utils/error-handler";
+import { sampleWithSeed } from "./utils/sample";
 import { generateDefaultQuestionTitle } from "./utils/generateTitle";
 import { validateFormValues } from "./utils/validation";
 
@@ -170,8 +171,12 @@ export default function Page() {
             }
           }
 
-          return comment;
-        });
+        return comment;
+      });
+      }
+
+      if (inputData.useRandomSample && comments.length > 1000) {
+        comments = sampleWithSeed(comments, 1000);
       }
     } catch (e) {
       toaster.create({
@@ -396,7 +401,11 @@ export default function Page() {
             />
           </Presence>
           {/* 警告メッセージ */}
-          <WarningSection />
+          <WarningSection
+            commentCount={inputData.commentCount}
+            useRandomSample={inputData.useRandomSample}
+            setUseRandomSample={inputData.setUseRandomSample}
+          />
           {process.env.NEXT_PUBLIC_ENVIRONMENT !== "instant" && (
             <Button className="gradientBg shadow" size="2xl" w="300px" onClick={onSubmitAndReturn} loading={loading}>
               レポート作成を開始
