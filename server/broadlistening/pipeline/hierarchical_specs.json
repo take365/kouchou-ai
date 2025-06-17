@@ -16,7 +16,7 @@
         "step": "embedding",
         "filename": "embeddings.pkl",
         "dependencies": {"params": ["model"], "steps": ["extraction"]},
-        "options": {"model": "text-embedding-3-small"}
+        "options": {"model": "text-embedding-3-small",    "use_summary": false}
     },
     {
         "step": "hierarchical_clustering",
@@ -28,7 +28,8 @@
             "cluster_lv1_min": 2,
             "cluster_lv1_max": 10,
             "cluster_lv2_min": 11,
-            "cluster_lv2_max": 20
+            "cluster_lv2_max": 20,
+                "use_summary": false
         }
         },
     {

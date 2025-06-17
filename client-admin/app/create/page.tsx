@@ -66,7 +66,7 @@ export default function Page() {
   const promptSettings = usePromptSettings();
   const aiSettings = useAISettings();
   const inputData = useInputData(clusterSettings.setRecommended);
-
+  const hasSummaryColumn = inputData.csvColumns.includes("summary");
   /**
    * タブ切り替え時の処理
    */
@@ -120,6 +120,7 @@ export default function Page() {
           const comment: CsvData = {
             id: row.id || `csv-${index + 1}`,
             comment: rowData[inputData.selectedCommentColumn] as string,
+            summary: (rowData.summary as string) || null,
             source: (rowData.source as string) || null,
             url: (rowData.url as string) || null,
           };
@@ -155,6 +156,7 @@ export default function Page() {
           const comment: CsvData = {
             id: row.id || `spreadsheet-${index + 1}`,
             comment: rowData[inputData.selectedCommentColumn] as string,
+            summary: row.summary || null,
             source: row.source || null,
             url: row.url || null,
           };
@@ -213,6 +215,7 @@ export default function Page() {
         skip_initial_labelling: aiSettings.skipInitialLabelling,
         skip_merge_labelling: aiSettings.skipMergeLabelling,
         skip_overview: aiSettings.skipOverview,
+        use_summary: aiSettings.useSummary,
         openai_api_key:
           process.env.NEXT_PUBLIC_ONETIME_LLM_API_KEY_MODE === "true" && aiSettings.provider === "openai"
             ? aiSettings.openaiApiKey
@@ -375,7 +378,6 @@ export default function Page() {
               requiresConnectionSettings={aiSettings.requiresConnectionSettings}
               isEmbeddedAtLocalDisabled={aiSettings.isEmbeddedAtLocalDisabled}
               promptSettings={promptSettings}
-              // ✅ スキップ系の追加
               skipExtraction={aiSettings.skipExtraction}
               setSkipExtraction={aiSettings.setSkipExtraction}
               skipInitialLabelling={aiSettings.skipInitialLabelling}
@@ -384,6 +386,9 @@ export default function Page() {
               setSkipMergeLabelling={aiSettings.setSkipMergeLabelling}
               skipOverview={aiSettings.skipOverview}
               setSkipOverview={aiSettings.setSkipOverview}
+              hasSummary={hasSummaryColumn}
+              useSummary={aiSettings.useSummary}
+              onUseSummaryChange={aiSettings.setUseSummary}
               openaiApiKey={aiSettings.openaiApiKey}
               setOpenaiApiKey={aiSettings.setOpenaiApiKey}
               openrouterApiKey={aiSettings.openrouterApiKey}

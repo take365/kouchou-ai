@@ -20,8 +20,12 @@ def embedding(config):
     dataset = config["output_dir"]
     path = f"outputs/{dataset}/embeddings.pkl"
 
-    df = pd.read_csv(f"outputs/{dataset}/args.csv", usecols=["arg-id", "argument"])
-    arguments = df["argument"].tolist()
+    df = pd.read_csv(
+        f"outputs/{dataset}/args.csv", usecols=["arg-id", "argument", "summary"]
+    )
+    use_summary = config.get("embedding", {}).get("use_summary", False)
+    texts = df["summary"] if use_summary else df["argument"]
+    arguments = texts.tolist()
     arg_ids = df["arg-id"].tolist()
 
     if not is_embedded_at_local:

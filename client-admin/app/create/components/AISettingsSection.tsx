@@ -36,6 +36,9 @@ export function AISettingsSection({
   setSkipMergeLabelling,
   skipOverview,
   setSkipOverview,
+  useSummary,
+  hasSummary,
+  onUseSummaryChange,
   openaiApiKey,
   setOpenaiApiKey,
   openrouterApiKey,
@@ -83,6 +86,9 @@ export function AISettingsSection({
   setSkipMergeLabelling: (value: boolean) => void;
   skipOverview: boolean;
   setSkipOverview: (value: boolean) => void;
+  useSummary: boolean;
+  hasSummary: boolean;
+  onUseSummaryChange: (value: boolean) => void;
   openaiApiKey?: string;
   setOpenaiApiKey?: (value: string) => void;
   openrouterApiKey?: string;
@@ -237,6 +243,19 @@ export function AISettingsSection({
                 ※ OpenAIプロバイダー以外を選択している場合、この設定は強制的にONになります
               </span>
             ))}
+        </Field.HelperText>
+      </Field.Root>
+      <Field.Root>
+        <Checkbox
+          checked={useSummary}
+          onCheckedChange={({ checked }) => onUseSummaryChange(checked === true)}
+          disabled={skipExtraction && !hasSummary}
+        >
+          埋め込み処理の対象に要旨（summary）を使う
+        </Checkbox>
+        <Field.HelperText>
+          抽出ステップで生成された１０文字以内程度の要旨（summary）を埋め込みとグループ化に利用します。抽出がスキップされた場合は、既存の
+          summary 列を使用します。
         </Field.HelperText>
       </Field.Root>
 

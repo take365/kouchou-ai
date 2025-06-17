@@ -30,6 +30,9 @@ def _build_config(report_input: ReportInput) -> dict[str, Any]:
         "local_llm_address": report_input.local_llm_address,
         "openai_api_key": report_input.openai_api_key,
         "openrouter_api_key": report_input.openrouter_api_key,
+        "embedding": {
+            "use_summary": report_input.use_summary,
+        },
         "extraction": {
             "prompt": report_input.prompt.extraction,
             "workers": report_input.workers,
@@ -38,6 +41,7 @@ def _build_config(report_input: ReportInput) -> dict[str, Any]:
         },
         "hierarchical_clustering": {
             "cluster_nums": report_input.cluster,
+            "use_summary": report_input.use_summary,
             "auto_cluster_enabled": report_input.auto_cluster_enabled,
             "cluster_lv1_min": report_input.clusterLv1_min,
             "cluster_lv1_max": report_input.clusterLv1_max,

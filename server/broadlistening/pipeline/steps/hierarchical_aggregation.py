@@ -42,6 +42,7 @@ def json_serialize_numpy(obj: Any) -> Any:
 class Argument(TypedDict):
     arg_id: str
     argument: str
+    summary: str
     comment_id: str
     x: float
     y: float
@@ -62,59 +63,56 @@ class Cluster(TypedDict):
 
 
 def hierarchical_aggregation(config) -> bool:
-    try:
-        path = f"outputs/{config['output_dir']}/hierarchical_result.json"
-        results = {
-            "arguments": [],
-            "clusters": [],
-            "comments": {},
-            "propertyMap": {},
-            "translations": {},
-            "overview": "",
-            "config": config,
-        }
+    path = f"outputs/{config['output_dir']}/hierarchical_result.json"
+    results = {
+        "arguments": [],
+        "clusters": [],
+        "comments": {},
+        "propertyMap": {},
+        "translations": {},
+        "overview": "",
+        "config": config,
+    }
 
-        arguments = pd.read_csv(f"outputs/{config['output_dir']}/args.csv")
-        arguments.set_index("arg-id", inplace=True)
-        arg_num = len(arguments)
-        relation_df = pd.read_csv(f"outputs/{config['output_dir']}/relations.csv")
-        comments = pd.read_csv(f"inputs/{config['input']}.csv")
-        clusters = pd.read_csv(f"outputs/{config['output_dir']}/hierarchical_clusters.csv")
-        labels = pd.read_csv(f"outputs/{config['output_dir']}/hierarchical_merge_labels.csv")
+    arguments = pd.read_csv(f"outputs/{config['output_dir']}/args.csv")
+    arguments.set_index("arg-id", inplace=True)
+    arg_num = len(arguments)
+    relation_df = pd.read_csv(f"outputs/{config['output_dir']}/relations.csv")
+    comments = pd.read_csv(f"inputs/{config['input']}.csv")
+    clusters = pd.read_csv(f"outputs/{config['output_dir']}/hierarchical_clusters.csv")
+    labels = pd.read_csv(f"outputs/{config['output_dir']}/hierarchical_merge_labels.csv")
+    # print("clusters columns:", clusters.columns)
+    # print("clusters sample:", clusters.head())
 
-        hidden_properties_map: dict[str, list[str]] = config["hierarchical_aggregation"]["hidden_properties"]
+    hidden_properties_map: dict[str, list[str]] = config["hierarchical_aggregation"]["hidden_properties"]
 
-        results["arguments"] = _build_arguments(clusters, comments, relation_df, config)
-        results["clusters"] = _build_cluster_value(labels, arg_num)
+    results["arguments"] = _build_arguments(clusters, comments, relation_df, config)
+    results["clusters"] = _build_cluster_value(labels, arg_num)
 
-        # results["comments"] = _build_comments_value(
-        #     comments, arguments, hidden_properties_map
-        # )
-        results["comment_num"] = len(comments)
-        results["translations"] = _build_translations(config)
-        # 属性情報のカラムは、元データに対して指定したカラムとclassificationするカテゴリを合わせたもの
-        results["propertyMap"] = _build_property_map(arguments, comments, hidden_properties_map, config)
+    # results["comments"] = _build_comments_value(
+    #     comments, arguments, hidden_properties_map
+    # )
+    results["comment_num"] = len(comments)
+    results["translations"] = _build_translations(config)
+    # 属性情報のカラムは、元データに対して指定したカラムとclassificationするカテゴリを合わせたもの
+    results["propertyMap"] = _build_property_map(arguments, comments, hidden_properties_map, config)
 
-        with open(f"outputs/{config['output_dir']}/hierarchical_overview.txt") as f:
-            overview = f.read()
-        print("overview")
-        print(overview)
-        results["overview"] = overview
+    with open(f"outputs/{config['output_dir']}/hierarchical_overview.txt") as f:
+        overview = f.read()
+    # print("overview")
+    # print(overview)
+    results["overview"] = overview
 
-        # Convert non-serializable NumPy types to native Python types
-        results = json_serialize_numpy(results)
+    # Convert non-serializable NumPy types to native Python types
+    results = json_serialize_numpy(results)
 
-        with open(path, "w") as file:
-            json.dump(results, file, indent=2, ensure_ascii=False)
-        # TODO: サンプリングロジックを実装したいが、現状は全件抽出
-        create_custom_intro(config)
-        if config["is_pubcom"]:
-            add_original_comments(labels, arguments, relation_df, clusters, config)
-        return True
-    except Exception as e:
-        print("error")
-        print(e)
-        return False
+    with open(path, "w") as file:
+        json.dump(results, file, indent=2, ensure_ascii=False)
+    # TODO: サンプリングロジックを実装したいが、現状は全件抽出
+    create_custom_intro(config)
+    if config["is_pubcom"]:
+        add_original_comments(labels, arguments, relation_df, clusters, config)
+    return True
 
 
 def create_custom_intro(config):
@@ -149,55 +147,78 @@ def add_original_comments(labels, arguments, relation_df, clusters, config):
     labels_lv1 = labels[labels["level"] == 1][["id", "label"]].rename(
         columns={"id": "cluster-level-1-id", "label": "category_label"}
     )
+    # print("DEBUG: arguments columns:", arguments.columns.tolist())
+    # print("DEBUG: clusters columns:", clusters.columns.tolist())
+    # print("DEBUG: labels_lv1 columns:", labels_lv1.columns.tolist())
 
-    # arguments と clusters をマージ（カテゴリ情報付与）
-    merged = arguments.merge(clusters[["arg-id", "cluster-level-1-id"]], on="arg-id").merge(
-        labels_lv1, on="cluster-level-1-id", how="left"
-    )
+    # arguments と clusters をマージ
+    merged = arguments.merge(clusters[["arg-id", "cluster-level-1-id"]], on="arg-id")
+    # print("DEBUG: merged (arguments + clusters) columns:", merged.columns.tolist())
+    # print("DEBUG: merged sample (head):", merged.head())
 
-    # relation_df と結合
+    merged = merged.merge(labels_lv1, on="cluster-level-1-id", how="left")
+    # print("DEBUG: merged (with labels_lv1) columns:", merged.columns.tolist())
+
     merged = merged.merge(relation_df, on="arg-id", how="left")
+    # print("DEBUG: merged (with relation_df) columns:", merged.columns.tolist())
+    # print("DEBUG: merged (with relation_df) sample:", merged.head())
 
-    # 元コメント取得
     comments = pd.read_csv(PIPELINE_DIR / f"inputs/{config['input']}.csv")
+    # comments 側の summary を削除（もし存在する場合）。抽出された方だけを使う。
+    if "summary" in comments.columns:
+        print("comments(inputs) 側の summary を削除します")
+        comments = comments.drop(columns=["summary"])
+
     comments["comment-id"] = comments["comment-id"].astype(str)
     merged["comment-id"] = merged["comment-id"].astype(str)
+    # print("DEBUG: comments columns:", comments.columns.tolist())
+    # print("DEBUG: comments sample:", comments.head())
 
-    # 元コメント本文などとマージ
-    final_df = merged.merge(comments, on="comment-id", how="left")
+    merged = merged.merge(comments, on="comment-id", how="left")
+    # print("DEBUG: merged (with comments) columns:", merged.columns.tolist())
+    # print("DEBUG: merged (with comments) sample:", merged.head())
 
-    # 必要カラムのみ整形
-    final_cols = ["comment-id", "comment-body", "arg-id", "argument", "cluster-level-1-id", "category_label"]
+    # 必要カラム整形
+    final_cols = ["comment-id", "comment-body", "arg-id", "argument", "summary", "cluster-level-1-id", "category_label"]
 
-    # 基本カラム
     for col in ["x", "y", "source", "url"]:
         if col in comments.columns:
             final_cols.append(col)
 
-    # 属性カラムを追加
     attribute_columns = []
     for col in comments.columns:
-        # attributeプレフィックスが付いたカラムを探す
         if col.startswith("attribute_"):
             attribute_columns.append(col)
             final_cols.append(col)
 
-    print(f"属性カラム検出: {attribute_columns}")
+    # print(f"DEBUG: 属性カラム検出: {attribute_columns}")
+    # print(f"DEBUG: final_cols to select: {final_cols}")
 
-    # 必要なカラムだけ選択
-    final_df = final_df[final_cols]
+    # カラム存在確認
+    missing_cols = [col for col in final_cols if col not in merged.columns]
+    if missing_cols:
+        print(f"⚠ WARNING: 以下のカラムが final_df に存在しません: {missing_cols}")
+        print("DEBUG: 全 available columns in final_df:", merged.columns.tolist())
+
+    # 必要なカラムを選択（あえて落とさない）
+    final_df = merged[[col for col in final_cols if col in merged.columns]]
+
+    # リネーム
     final_df = final_df.rename(
         columns={
             "cluster-level-1-id": "category_id",
             "category_label": "category",
             "arg-id": "arg_id",
             "argument": "argument",
+            "summary": "summary",
             "comment-body": "original-comment",
         }
     )
 
     # 保存
-    final_df.to_csv(PIPELINE_DIR / f"outputs/{config['output_dir']}/final_result_with_comments.csv", index=False)
+    output_path = PIPELINE_DIR / f"outputs/{config['output_dir']}/final_result_with_comments.csv"
+    final_df.to_csv(output_path, index=False)
+    print(f"✅ final_result_with_comments.csv を出力しました: {output_path}")
 
 
 def _build_arguments(
@@ -238,6 +259,7 @@ def _build_arguments(
         argument: Argument = {
             "arg_id": str(row["arg-id"]),  # Convert to string to ensure serializable
             "argument": str(row["argument"]),
+            "summary": str(row["summary"]),
             "x": float(row["x"]),  # Convert to native float
             "y": float(row["y"]),  # Convert to native float
             "p": 0,  # NOTE: 一旦全部0でいれる

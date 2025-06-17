@@ -40,6 +40,7 @@ def validate_config(config):
         "enable_source_link",
         "openai_api_key",
         "openrouter_api_key",
+        "use_summary",
     ]
     step_names = [x["step"] for x in specs]
     for key in config:
