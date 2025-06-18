@@ -11,10 +11,10 @@ def load_json_with_fallback(path: Path):
         print(f"⚠️ Missing: {path}")
         return {}
     try:
-        with open(path, encoding='utf-8') as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except UnicodeDecodeError:
-        with open(path, encoding='shift_jis') as f:
+        with open(path, encoding="shift_jis") as f:
             return json.load(f)
 
 
@@ -48,41 +48,48 @@ def generate_simple_html(config):
 
     # 上位層クラスタのみ対象
     level1_clusters = [c for c in clusters if c.get("level") == 1]
+    level2_clusters = [c for c in clusters if c.get("level") == 2]
     cluster_tree = [build_tree(c) for c in level1_clusters]
 
-    # 色マップ（Lv1クラスタのみ）
+    # 色マップ（全階層）
     color_map = {}
+    # Level 1
     for i, c in enumerate(level1_clusters):
         hue = (i * 0.14) % 1.0
-        rgb = colorsys.hsv_to_rgb(hue, 0.6, 0.7)
-        hex_color = f'#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}'
-        color_map[c["id"]] = hex_color
+        r, g, b = colorsys.hsv_to_rgb(hue, 0.6, 0.7)
+        color_map[c["id"]] = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+    # Level 2
+    for i, c in enumerate(level2_clusters, start=len(level1_clusters)):
+        hue = (i * 0.14) % 1.0
+        r, g, b = colorsys.hsv_to_rgb(hue, 0.6, 0.7)
+        color_map[c["id"]] = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
 
-    # 上位クラスタごとに属する arguments を収集（Lv2経由でない）
+    # 上位クラスタごとに属する arguments を収集（全階層でOK）
     cluster_args_map = {}
     for c in level1_clusters:
-        cluster_args_map[c["id"]] = [
-            a for a in result["arguments"]
-            if c["id"] in a.get("cluster_ids", [])
-        ]
+        cluster_args_map[c["id"]] = [a for a in result["arguments"] if c["id"] in a.get("cluster_ids", [])]
 
+    # Jinja 環境読み込み
     env = Environment(loader=FileSystemLoader(str(template_dir)))
     env.tests["search"] = lambda value, sub: sub in value
     template = env.get_template(template_name)
 
+    # テンプレートにデータを渡してレンダリング
     html = template.render(
         result=result,
         cluster_tree=cluster_tree,
         hierarchical_overview=hierarchical_overview,
         color_map=color_map,
-        cluster_args_map=cluster_args_map  # JavaScriptで活用する場合にも利用可能
+        cluster_args_map=cluster_args_map,
     )
+    # HTMLファイル出力
     output_path.write_text(html, encoding="utf-8")
     print(f"✅ 出力完了: {output_path}")
 
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 2:
         print("Usage: python generate_simple_html.py [dataset-slug]")
         sys.exit(1)
