@@ -39,9 +39,20 @@ def json_serialize_numpy(obj: Any) -> Any:
         return obj
 
 
+class Cluster(TypedDict):
+    level: int
+    id: str
+    label: str
+    takeaway: str
+    value: int
+    parent: str
+    density_rank_percentile: int | float | None
+
+
 class Argument(TypedDict):
     arg_id: str
     argument: str
+    original_comment: str
     summary: str
     comment_id: str
     x: float
@@ -50,16 +61,6 @@ class Argument(TypedDict):
     cluster_ids: list[str]
     attributes: dict[str, str] | None
     url: str | None
-
-
-class Cluster(TypedDict):
-    level: int
-    id: str
-    label: str
-    takeaway: str
-    value: int
-    parent: str
-    density_rank_percentile: float | None
 
 
 def hierarchical_aggregation(config) -> bool:
@@ -225,83 +226,73 @@ def _build_arguments(
     clusters: pd.DataFrame, comments: pd.DataFrame, relation_df: pd.DataFrame, config: dict
 ) -> list[Argument]:
     """
-    Build the arguments list including attribute information from original comments
-
-    Args:
-        clusters: DataFrame containing cluster information for each argument
-        comments: DataFrame containing original comments with attribute columns
-        relation_df: DataFrame relating arguments to original comments
-        config: Configuration dictionary containing enable_source_link setting
+    Build the arguments list including summary, original comments, attributes, and source URL
     """
+    # クラスタID列を特定
     cluster_columns = [col for col in clusters.columns if col.startswith("cluster-level-") and "id" in col]
 
-    # Prepare for merging with original comments to get attributes
+    # コメント DataFrame をコピーして ID を文字列化
     comments_copy = comments.copy()
     comments_copy["comment-id"] = comments_copy["comment-id"].astype(str)
 
-    # Get argument to comment mapping
-    arg_comment_map = {}
+    # 引数とコメントのマッピングを取得
+    arg_comment_map: dict[str, str] = {}
     if "comment-id" in relation_df.columns:
         relation_df["comment-id"] = relation_df["comment-id"].astype(str)
         arg_comment_map = dict(zip(relation_df["arg-id"], relation_df["comment-id"], strict=False))
 
-    # Find attribute columns in comments dataframe
+    # 属性カラムを検出
     attribute_columns = [col for col in comments.columns if col.startswith("attribute_")]
-    print(f"属性カラム検出: {attribute_columns}")
 
     arguments: list[Argument] = []
     for _, row in clusters.iterrows():
-        cluster_ids = ["0"]
-        for cluster_column in cluster_columns:
-            cluster_ids.append(str(row[cluster_column]))  # Convert to string to ensure serializable
+        # cluster_ids をリスト化
+        cluster_ids = ["0"] + [str(row[col]) for col in cluster_columns]
 
-        # Create base argument
+        # ベース情報をセット
         argument: Argument = {
-            "arg_id": str(row["arg-id"]),  # Convert to string to ensure serializable
+            "arg_id": str(row["arg-id"]),
             "argument": str(row["argument"]),
-            "summary": str(row["summary"]),
-            "x": float(row["x"]),  # Convert to native float
-            "y": float(row["y"]),  # Convert to native float
-            "p": 0,  # NOTE: 一旦全部0でいれる
+            "summary": str(row.get("summary", "")),
+            "original_comment": "",
+            "x": float(row["x"]),
+            "y": float(row["y"]),
+            "p": 0,
             "cluster_ids": cluster_ids,
             "attributes": None,
             "url": None,
         }
 
-        # Add attributes and URL if available
-        if row["arg-id"] in arg_comment_map:
-            comment_id = arg_comment_map[row["arg-id"]]
+        # マッピングがある場合に元コメント・URL・属性を付与
+        comment_id = arg_comment_map.get(row["arg-id"])
+        if comment_id:
             comment_rows = comments_copy[comments_copy["comment-id"] == comment_id]
-
             if not comment_rows.empty:
                 comment_row = comment_rows.iloc[0]
 
-                # Add URL if available and enabled
-                if config.get("enable_source_link", False) and "url" in comment_row and comment_row["url"] is not None:
+                # URL の追加
+                if config.get("enable_source_link", False) and comment_row.get("url") is not None:
                     argument["url"] = str(comment_row["url"])
 
-                # Add attributes if available
+                # 属性の追加
                 if attribute_columns:
-                    attributes = {}
+                    attrs: dict[str, str] = {}
                     for attr_col in attribute_columns:
-                        # Remove "attribute_" prefix for cleaner attribute names
-                        attr_name = attr_col[len("attribute_") :]
-                        # Convert potential numpy types to Python native types
-                        attr_value = comment_row.get(attr_col, None)
-                        if attr_value is not None:
-                            if isinstance(attr_value, np.integer):
-                                attr_value = int(attr_value)
-                            elif isinstance(attr_value, np.floating):
-                                attr_value = float(attr_value)
-                            elif isinstance(attr_value, np.ndarray):
-                                attr_value = attr_value.tolist()
-                        attributes[attr_name] = attr_value
+                        attr_name = attr_col.replace("attribute_", "")
+                        value = comment_row.get(attr_col)
+                        if isinstance(value, (np.integer, np.floating)):
+                            value = value.item()
+                        elif isinstance(value, np.ndarray):
+                            value = value.tolist()
+                        attrs[attr_name] = value
+                    if any(v is not None for v in attrs.values()):
+                        argument["attributes"] = attrs
 
-                    # Only add non-empty attributes
-                    if any(v is not None for v in attributes.values()):
-                        argument["attributes"] = attributes
+                # 原文の追加
+                argument["original_comment"] = str(comment_row.get("comment-body", ""))
 
         arguments.append(argument)
+
     return arguments
 
 
@@ -420,3 +411,24 @@ def _build_property_map(
             property_map[prop][str_arg_id] = value
 
     return property_map
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 2:
+        print("Usage: python steps/hierarchical_aggregation.py [dataset-slug]")
+        sys.exit(1)
+    slug = sys.argv[1]
+    # config に input キーとして slug を設定
+    # hierarchical_aggregation 設定を空で初期化
+    config = {
+        "intro": {},
+        "input": slug,
+        "output_dir": slug,
+        "is_pubcom": False,
+        "enable_source_link": False,
+        "hierarchical_aggregation": {"sampling_num": 30, "hidden_properties": {}},
+        "extraction": {"limit": 2000, "prompt": {}, "categories": {}},
+    }
+    hierarchical_aggregation(config)
