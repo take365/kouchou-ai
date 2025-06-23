@@ -6,17 +6,15 @@
  *
  * @returns APIのベースURL
  */
+export const getApiBaseUrls = (): string[] => {
+  const base =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_API_BASEPATH
+      : process.env.API_BASEPATH || process.env.NEXT_PUBLIC_API_BASEPATH;
+  return base ? base.split(",").map((s) => s.trim()).filter(Boolean) : [];
+};
+
 export const getApiBaseUrl = (): string => {
-  // クライアントサイド（ブラウザ環境）の場合
-  if (typeof window !== "undefined") {
-    return process.env.NEXT_PUBLIC_API_BASEPATH || "";
-  }
-
-  // サーバーサイドでAPI_BASEPATHが設定されている場合
-  if (process.env.API_BASEPATH) {
-    return process.env.API_BASEPATH;
-  }
-
-  // それ以外の場合はNEXT_PUBLIC_API_BASEPATHを使用
-  return process.env.NEXT_PUBLIC_API_BASEPATH || "";
+  const urls = getApiBaseUrls();
+  return urls[0] || "";
 };

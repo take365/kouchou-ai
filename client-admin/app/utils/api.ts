@@ -1,10 +1,12 @@
-export const getApiBaseUrl = () => {
-  if (typeof window !== "undefined") {
-    return process.env.NEXT_PUBLIC_API_BASEPATH;
-  }
-  // undefinedでなければAPI_BASEPATHを返す
-  if (process.env.API_BASEPATH) {
-    return process.env.API_BASEPATH;
-  }
-  return process.env.NEXT_PUBLIC_API_BASEPATH;
+export const getApiBaseUrls = (): string[] => {
+  const base =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_API_BASEPATH
+      : process.env.API_BASEPATH || process.env.NEXT_PUBLIC_API_BASEPATH;
+  return base ? base.split(",").map((s) => s.trim()).filter(Boolean) : [];
+};
+
+export const getApiBaseUrl = (): string => {
+  const urls = getApiBaseUrls();
+  return urls[0] || "";
 };

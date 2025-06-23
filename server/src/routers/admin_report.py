@@ -18,8 +18,13 @@ from src.services.llm_models import get_models_by_provider
 from src.services.llm_pricing import LLMPricing
 from src.services.report_launcher import execute_aggregation, launch_report_generation
 from src.services.report_status import (
+    count_processing_jobs,
+    count_reservations,
+    create_reservation,
+    generate_session_token,
     invalidate_report_cache,
     load_status_as_reports,
+    release_reservation,
     set_status,
     update_report_config,
     update_report_visibility_state,
@@ -43,12 +48,36 @@ async def get_reports(api_key: str = Depends(verify_admin_api_key)) -> list[Repo
     return load_status_as_reports()
 
 
+@router.get("/admin/server/status")
+async def server_status(api_key: str = Depends(verify_admin_api_key)) -> dict:
+    return {
+        "processing_jobs": count_processing_jobs(),
+        "reservations": count_reservations(),
+    }
+
+
+@router.post("/admin/server/reserve")
+async def reserve_server(api_key: str = Depends(verify_admin_api_key)) -> dict:
+    token = create_reservation()
+    return {"reservation_token": token}
+
+
+@router.post("/admin/server/release")
+async def release_server(
+    token: str = Query(...),
+    api_key: str = Depends(verify_admin_api_key),
+) -> dict:
+    release_reservation(token)
+    return {"released": True}
+
+
 @router.post("/admin/reports", status_code=202)
 async def create_report(report: ReportInput, api_key: str = Depends(verify_admin_api_key)) -> ORJSONResponse:
     try:
         launch_report_generation(report)
+        token = generate_session_token(report.input)
         return ORJSONResponse(
-            content=None,
+            content={"token": token},
             headers={
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
